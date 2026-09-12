@@ -127,5 +127,70 @@ void main() {
       expect(controller.attempted, 2);
       expect(controller.running, isFalse);
     });
+
+    group('skipTo()', () {
+      test('jumps the cursor forward and the skipped-to candidate still sends',
+          () async {
+        final sent = <int>[];
+        final controller = TransmitCycleController<int>(
+          sendCandidate: (c) async => sent.add(c),
+        );
+
+        controller.start(<int>[1, 2, 3, 4, 5], delayMs: 150);
+        await pump(200);
+        expect(sent, isNotEmpty);
+
+        controller.skipTo(3);
+        expect(controller.attempted, 3);
+        expect(sent, isNot(contains(4)),
+            reason: 'skipped-over candidates must never be sent');
+
+        await pump(400);
+        expect(sent, contains(4), reason: 'the candidate at the target index still sends');
+        expect(controller.attempted, 5);
+        expect(controller.running, isFalse);
+      });
+
+      test('skipping to the end of the list stops the run without sending more',
+          () async {
+        final sent = <int>[];
+        final controller = TransmitCycleController<int>(
+          sendCandidate: (c) async => sent.add(c),
+        );
+
+        controller.start(<int>[1, 2, 3], delayMs: 150);
+        await pump(200);
+        final sentAtSkip = sent.length;
+
+        controller.skipTo(3);
+        expect(controller.running, isFalse);
+        expect(controller.attempted, 3);
+
+        await pump(400);
+        expect(sent.length, sentAtSkip,
+            reason: 'nothing further should send once skipped to the end');
+      });
+
+      test('is a no-op when not running, or when the index does not move forward',
+          () async {
+        final controller = TransmitCycleController<int>(
+          sendCandidate: (_) async {},
+        );
+
+        controller.skipTo(2);
+        expect(controller.attempted, 0);
+
+        controller.start(<int>[1, 2, 3], delayMs: 150);
+        await pump(200);
+        final attemptedBefore = controller.attempted;
+
+        controller.skipTo(attemptedBefore);
+        expect(controller.attempted, attemptedBefore);
+
+        controller.skipTo(0);
+        expect(controller.attempted, attemptedBefore,
+            reason: 'skipTo never moves the cursor backward');
+      });
+    });
   });
 }

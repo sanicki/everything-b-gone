@@ -65,31 +65,58 @@ List<FlipperIrFile> filterFiles(
   }).toList();
 }
 
-/// The Power button's candidate signals across the filtered file set: one
-/// per file at most (a file's own power-then-off preference, via
+/// A candidate signal paired with the brand of the file it came from, so
+/// a run can skip every remaining signal for one brand without needing to
+/// know anything about [FlipperIrSignal] beyond what [matchingPowerSignals]
+/// already exposes.
+class BrandSignal {
+  final String brand;
+  final FlipperIrSignal signal;
+
+  const BrandSignal({required this.brand, required this.signal});
+}
+
+/// The Power button's candidates across the filtered file set: one per
+/// file at most (a file's own power-then-off preference, via
 /// [powerOrOffSignalFor]), skipping files with neither, then deduplicated
 /// so identical transmissions (common across models sharing a protocol)
-/// are only sent once per cycle.
+/// are only sent once per cycle. Order is preserved, brand included.
+List<BrandSignal> matchingPowerBrandSignals(List<FlipperIrFile> filteredFiles) {
+  return _dedupeBrandSignals(filteredFiles, powerOrOffSignalFor);
+}
+
+/// The Mute button's candidates across the filtered file set, deduplicated
+/// the same way as [matchingPowerBrandSignals].
+List<BrandSignal> matchingMuteBrandSignals(List<FlipperIrFile> filteredFiles) {
+  return _dedupeBrandSignals(filteredFiles, muteSignalFor);
+}
+
+/// Same as [matchingPowerBrandSignals], without the brand — kept for
+/// callers (and existing tests) that only need the signals themselves.
 List<FlipperIrSignal> matchingPowerSignals(List<FlipperIrFile> filteredFiles) {
-  return _dedupeSignals(
-    filteredFiles.map(powerOrOffSignalFor).whereType<FlipperIrSignal>(),
-  );
+  return matchingPowerBrandSignals(filteredFiles)
+      .map((m) => m.signal)
+      .toList(growable: false);
 }
 
-/// The Mute button's candidate signals across the filtered file set,
-/// deduplicated the same way as [matchingPowerSignals].
+/// Same as [matchingMuteBrandSignals], without the brand.
 List<FlipperIrSignal> matchingMuteSignals(List<FlipperIrFile> filteredFiles) {
-  return _dedupeSignals(
-    filteredFiles.map(muteSignalFor).whereType<FlipperIrSignal>(),
-  );
+  return matchingMuteBrandSignals(filteredFiles)
+      .map((m) => m.signal)
+      .toList(growable: false);
 }
 
-List<FlipperIrSignal> _dedupeSignals(Iterable<FlipperIrSignal> signals) {
+List<BrandSignal> _dedupeBrandSignals(
+  List<FlipperIrFile> filteredFiles,
+  FlipperIrSignal? Function(FlipperIrFile) pick,
+) {
   final seenKeys = <String>{};
-  final result = <FlipperIrSignal>[];
-  for (final signal in signals) {
+  final result = <BrandSignal>[];
+  for (final file in filteredFiles) {
+    final signal = pick(file);
+    if (signal == null) continue;
     if (seenKeys.add(signal.dedupeKey)) {
-      result.add(signal);
+      result.add(BrandSignal(brand: file.brand, signal: signal));
     }
   }
   return result;

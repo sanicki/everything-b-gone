@@ -79,6 +79,27 @@ class TransmitCycleController<T> extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Jumps the cycle directly to [index] (clamped to `[attempted, total]`),
+  /// skipping every candidate in between without sending them, and
+  /// reschedules so the candidate now at [index] fires after the normal
+  /// delay like any other tick. A no-op while not actively running, or if
+  /// [index] doesn't move the cursor forward. Passing `total` ends the run.
+  ///
+  /// Callers decide what "skip" means for their candidate type (e.g. "skip
+  /// to the next brand") — this controller has no domain knowledge of `T`.
+  void skipTo(int index) {
+    if (!running || paused) return;
+    final clamped = index.clamp(attempted, _candidates.length);
+    if (clamped == attempted) return;
+    attempted = clamped;
+    notifyListeners();
+    if (attempted >= _candidates.length) {
+      stop();
+      return;
+    }
+    _scheduleTimer();
+  }
+
   void _scheduleTimer() {
     _cancelTimer();
     if (!running || paused) return;
