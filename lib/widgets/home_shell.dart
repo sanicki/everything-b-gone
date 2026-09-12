@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/widgets/everything_bgone_screen.dart';
 import 'package:everythingbgone/widgets/settings_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -12,9 +13,8 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  // TODO: replaced by the real Everything-B-Gone screen.
   static const List<Widget> _pages = <Widget>[
-    _HomePlaceholder(),
+    EverythingBGoneScreen(),
     SettingsScreen(),
   ];
 
@@ -37,23 +37,6 @@ class _HomeShellState extends State<HomeShell> {
             label: context.l10n.settingsNavLabel,
           ),
         ],
-      ),
-    );
-  }
-}
-
-// TODO: replaced by the real Everything-B-Gone screen.
-class _HomePlaceholder extends StatelessWidget {
-  const _HomePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text(
-          'Everything-B-Gone — coming soon',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
       ),
     );
   }

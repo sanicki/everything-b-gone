@@ -21,6 +21,7 @@ import 'package:everythingbgone/widgets/settings/widgets/section_card.dart';
 import 'package:everythingbgone/widgets/settings/widgets/support_pill.dart';
 import 'package:everythingbgone/widgets/device_controls_screen.dart';
 import 'package:everythingbgone/widgets/quick_settings_screen.dart';
+import 'package:everythingbgone/widgets/settings/widgets/flipper_data_card.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -418,6 +419,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 10),
           _buildIrTransmitterSection(context, cs),
           const SizedBox(height: 10),
+          _buildFlipperDataSection(context, cs),
+          const SizedBox(height: 10),
           _buildRemotesSection(context),
           const SizedBox(height: 10),
           _buildDeviceControlsSection(context),
@@ -692,6 +695,18 @@ class SettingsScreen extends StatelessWidget {
           background: cs.primaryContainer,
         ),
         child: const _IrTransmitterCard(),
+      ),
+    );
+  }
+
+  Widget _buildFlipperDataSection(BuildContext context, ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SectionCard(
+        title: 'Flipper-IRDB data',
+        subtitle: 'Manage the cached device signal database',
+        leading: Icon(Icons.cloud_download_rounded, color: cs.primary),
+        child: const FlipperDataCard(),
       ),
     );
   }
