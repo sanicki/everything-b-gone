@@ -29,8 +29,6 @@ import android.util.Base64
 import android.util.Log
 import android.view.HapticFeedbackConstants
 import androidx.annotation.NonNull
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -39,9 +37,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import com.example.everythingbgone.audio.AudioCapturedIrPlayer
 import com.example.everythingbgone.audio.AudioIrTransmitter
-import com.example.everythingbgone.audio.AudioIrLearner
-import com.example.everythingbgone.huawei.HuaweiIrLearner
-import com.example.everythingbgone.lg.LgIrLearner
 import com.example.everythingbgone.BaseQuickTileService
 import java.util.UUID
 
@@ -62,22 +57,11 @@ class MainActivity : FlutterActivity() {
     private var usbManager: UsbManager? = null
     private var usbDiscovery: UsbDiscoveryManager? = null
     private var usbTransmitter: UsbIrTransmitter? = null
-    @Volatile private var usbLearner: UsbLearnerSession? = null
-    @Volatile private var usbLearningCancelRequested: Boolean = false
     private var usbState: UsbAvailabilityState = UsbAvailabilityState.NO_DEVICE
     private var usbStateMessage: String? = null
 
     private val audio1Tx by lazy { AudioIrTransmitter(applicationContext, mode = 1) }
     private val audio2Tx by lazy { AudioIrTransmitter(applicationContext, mode = 2) }
-    @Volatile private var audioLearner: AudioIrLearner? = null
-    @Volatile private var audioLearningCancelRequested: Boolean = false
-    private var pendingAudioPermissionResult: MethodChannel.Result? = null
-
-    @Volatile private var huaweiLearner: HuaweiIrLearner? = null
-    @Volatile private var huaweiLearningCancelRequested: Boolean = false
-
-    @Volatile private var lgLearner: LgIrLearner? = null
-    @Volatile private var lgLearningCancelRequested: Boolean = false
 
     private val prefs by lazy {
         applicationContext.getSharedPreferences("ir_blaster_prefs", Context.MODE_PRIVATE)
@@ -214,11 +198,6 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun acquireUsbTransmitter(requestPermissionIfNeeded: Boolean): UsbAcquireResult {
-        if (usbLearner != null) {
-            setUsbState(UsbAvailabilityState.OPEN_FAILED, "USB dongle is busy in learning mode.")
-            return UsbAcquireResult(null, UsbAvailabilityState.OPEN_FAILED)
-        }
-
         usbTransmitter?.let {
             setUsbState(UsbAvailabilityState.READY, "USB dongle is connected and initialized.")
             return UsbAcquireResult(it, UsbAvailabilityState.READY)
@@ -303,8 +282,6 @@ class MainActivity : FlutterActivity() {
             "usbStatus" to usbStateWireValue(usbState),
             "usbStatusMessage" to usbStateMessage,
             "hasAudio" to true,
-            "hasHuaweiIrLearning" to HuaweiIrLearner.isSupported(applicationContext),
-            "hasLgeIrLearning"    to LgIrLearner.isSupported(applicationContext),
             "currentType" to currentTxType.name,
             "usbDevices" to usbDevs,
             "autoSwitchEnabled" to autoSwitchEnabled
@@ -434,7 +411,6 @@ class MainActivity : FlutterActivity() {
         private const val DEFAULT_HEX_FREQUENCY = 38000
         private const val MIN_IR_HZ = 15000
         private const val MAX_IR_HZ = 60000
-        private const val RECORD_AUDIO_PERMISSION_REQUEST = 1007
     }
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
@@ -505,15 +481,6 @@ class MainActivity : FlutterActivity() {
                     "getOpenOnUsbAttachEnabled" -> result.success(openOnUsbAttachEnabled)
                     "setOpenOnUsbAttachEnabled" -> handleSetOpenOnUsbAttachEnabled(call, result)
                     "shareText" -> handleShareText(call, result)
-                    "learnUsbSignal" -> handleLearnUsbSignal(call, result)
-                    "cancelUsbLearning" -> handleCancelUsbLearning(result)
-                    "replayLearnedUsbSignal" -> handleReplayLearnedUsbSignal(call, result)
-                    "getAudioLearningDiagnostics" -> result.success(buildAudioLearningDiagnostics())
-                    "requestAudioLearningPermission" -> handleRequestAudioLearningPermission(result)
-                    "learnHuaweiSignal" -> handleLearnHuaweiSignal(call, result)
-                    "cancelHuaweiLearning" -> handleCancelHuaweiLearning(result)
-                    "learnLgSignal" -> handleLearnLgSignal(call, result)
-                    "cancelLgLearning" -> handleCancelLgLearning(result)
                     else -> result.notImplemented()
                 }
             }
@@ -992,14 +959,6 @@ class MainActivity : FlutterActivity() {
         }
         txEventSink = null
         homeWidgetChannel = null
-        usbLearner?.closeSafely()
-        usbLearner = null
-        audioLearner?.cancel()
-        audioLearner = null
-        huaweiLearner?.cancel()
-        huaweiLearner = null
-        lgLearner?.cancel()
-        lgLearner = null
         usbTransmitter?.closeSafely()
         usbTransmitter = null
         audio1Tx.stop()
@@ -1047,99 +1006,12 @@ class MainActivity : FlutterActivity() {
         return tx
     }
 
-    private fun openTiqiaaLearnerDevice(device: UsbDevice): TiqiaaUsbLearner? {
-        val mgr = usbManager ?: return null
-        return TiqiaaUsbLearner.open(mgr, device)
-    }
-
-    private fun openElkSmartLearnerDevice(device: UsbDevice): ElkSmartUsbLearner? {
-        val mgr = usbManager ?: return null
-        return ElkSmartUsbLearner.open(mgr, device)
-    }
-
     private fun currentAudioModeOrNull(): Short? {
         return when (currentTxType) {
             TxType.AUDIO_1_LED -> 1
             TxType.AUDIO_2_LED -> 2
             else -> null
         }
-    }
-
-    private fun buildAudioLearningDiagnostics(): Map<String, Any?> {
-        val diag = AudioIrLearner.diagnostics(applicationContext)
-        return mapOf(
-            "permissionGranted" to diag.permissionGranted,
-            "usbInputAvailable" to diag.usbInputAvailable,
-            "inputName" to diag.inputName,
-            "currentAudioMode" to currentAudioModeOrNull()?.toInt(),
-        )
-    }
-
-    private fun handleRequestAudioLearningPermission(result: MethodChannel.Result) {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) ==
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            result.success(true)
-            return
-        }
-        if (pendingAudioPermissionResult != null) {
-            result.error("AUDIO_PERMISSION_BUSY", "Audio permission request already in progress", null)
-            return
-        }
-        pendingAudioPermissionResult = result
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(android.Manifest.permission.RECORD_AUDIO),
-            RECORD_AUDIO_PERMISSION_REQUEST,
-        )
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray,
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode != RECORD_AUDIO_PERMISSION_REQUEST) return
-        val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-        pendingAudioPermissionResult?.success(granted)
-        pendingAudioPermissionResult = null
-    }
-
-    private fun beginUsbLearningSession(predicate: (UsbDevice) -> Boolean): UsbDevice? {
-        val disc = usbDiscovery ?: return null
-        val mgr = usbManager ?: return null
-        val dev = try {
-            disc.scanSupported().firstOrNull(predicate)
-        } catch (_: Throwable) {
-            null
-        } ?: return null
-        if (!mgr.hasPermission(dev)) {
-            return null
-        }
-
-        usbLearner?.closeSafely()
-        usbLearner = null
-        usbTransmitter?.closeSafely()
-        usbTransmitter = null
-        refreshUsbStateSnapshot()
-        emitTxStatus("usb_learning_session_begin")
-        emitTxStatusDelayed("usb_learning_session_begin_delayed", 150L)
-        return dev
-    }
-
-    private fun endUsbLearningSession(reason: String) {
-        usbLearner?.closeSafely()
-        usbLearner = null
-
-        try {
-            openUsbIfPermitted()?.let { usbTransmitter = it }
-        } catch (_: Throwable) {
-        }
-
-        refreshUsbStateSnapshot()
-        emitTxStatus(reason)
-        emitTxStatusDelayed("${reason}_delayed", 250L)
     }
 
     private fun getOrOpenUsbTransmitterOrRequest(): UsbIrTransmitter? {
@@ -1438,401 +1310,6 @@ class MainActivity : FlutterActivity() {
         result.success(buildTxCapsMap())
     }
 
-    private fun handleLearnUsbSignal(call: MethodCall, result: MethodChannel.Result) {
-        val audioMode = currentAudioModeOrNull()
-        if (audioMode != null) {
-            result.error("LEARN_UNSUPPORTED", "Learning Mode supports compatible USB IR dongles only.", null)
-            return
-        }
-        if (usbLearner != null) {
-            result.error("LEARN_BUSY", "USB learning is already active", null)
-            return
-        }
-
-        val timeoutMs = (call.argument<Int>("timeoutMs") ?: 30000).coerceIn(1000, 60000)
-        val disc = usbDiscovery
-        val mgr = usbManager
-        if (disc == null || mgr == null) {
-            result.error("NO_USB", "UsbManager not available", null)
-            return
-        }
-
-        val dev = try {
-            disc.scanSupported().firstOrNull {
-                UsbDeviceFilter.isTiqiaaTviewFamily(it) || UsbDeviceFilter.isElkSmart(it)
-            }
-        } catch (_: Throwable) {
-            null
-        }
-        if (dev == null) {
-            result.error("LEARN_UNSUPPORTED", "No learning-capable USB IR dongle is attached", null)
-            return
-        }
-        if (!mgr.hasPermission(dev)) {
-            disc.requestPermission(dev)
-            result.error("USB_PERMISSION_REQUIRED", "USB permission is required for the attached dongle.", null)
-            return
-        }
-
-        val sessionDevice = beginUsbLearningSession { it.deviceId == dev.deviceId }
-        if (sessionDevice == null) {
-            result.error("LEARN_OPEN_FAILED", "The USB IR dongle could not be prepared for learning", null)
-            return
-        }
-        usbLearningCancelRequested = false
-
-        Thread {
-            var learner: UsbLearnerSession? = null
-            try {
-                val learned: Map<String, Any?>? = when {
-                    UsbDeviceFilter.isTiqiaaTviewFamily(sessionDevice) -> {
-                        val tiqiaaLearner = openTiqiaaLearnerDevice(sessionDevice)
-                        learner = tiqiaaLearner
-                        tiqiaaLearner?.learn(timeoutMs) { usbLearningCancelRequested }?.toWireMap()
-                    }
-                    UsbDeviceFilter.isElkSmart(sessionDevice) -> {
-                        val elkLearner = openElkSmartLearnerDevice(sessionDevice)
-                        learner = elkLearner
-                        elkLearner?.learn(timeoutMs) { usbLearningCancelRequested }?.toWireMap()
-                    }
-                    else -> null
-                }
-
-                if (learner == null) {
-                    runOnUiThread {
-                        result.error("LEARN_OPEN_FAILED", "The USB IR dongle could not be opened for learning", null)
-                    }
-                    return@Thread
-                }
-
-                usbLearner = learner
-                runOnUiThread {
-                    if (usbLearningCancelRequested) {
-                        result.success(null)
-                    } else if (learned != null) {
-                        result.success(learned)
-                    } else {
-                        result.error("LEARN_TIMEOUT", "No IR signal was captured before the listening window expired", null)
-                    }
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "learnUsbSignal failed: ${t.message}", t)
-                runOnUiThread {
-                    result.error("LEARN_FAILED", t.message ?: "USB learning failed", null)
-                }
-            } finally {
-                usbLearningCancelRequested = false
-                learner?.closeSafely()
-                endUsbLearningSession("usb_learning_finished")
-            }
-        }.start()
-    }
-
-    private fun handleLearnAudioSignal(call: MethodCall, result: MethodChannel.Result, audioMode: Short) {
-        if (audioLearner != null) {
-            result.error("LEARN_BUSY", "Audio learning is already active", null)
-            return
-        }
-        val diag = AudioIrLearner.diagnostics(applicationContext)
-        if (!diag.permissionGranted) {
-            result.error("AUDIO_PERMISSION_REQUIRED", "Microphone permission is required for audio learning.", null)
-            return
-        }
-        if (!diag.usbInputAvailable) {
-            result.error("AUDIO_INPUT_UNAVAILABLE", "No USB audio input device is available for learning.", null)
-            return
-        }
-
-        val timeoutMs = (call.argument<Int>("timeoutMs") ?: 30000).coerceIn(1000, 60000)
-        audioLearningCancelRequested = false
-
-        Thread {
-            val learner = AudioIrLearner(applicationContext, audioMode)
-            audioLearner = learner
-            try {
-                val learned = learner.learn(timeoutMs)
-                audioLearningCancelRequested = false
-                learner.cancel()
-                audioLearner = null
-                runOnUiThread {
-                    if (audioLearningCancelRequested) {
-                        result.success(null)
-                    } else if (learned != null) {
-                        result.success(learned.toWireMap())
-                    } else {
-                        result.error("LEARN_TIMEOUT", "No audio learning signal was captured before the listening window expired", null)
-                    }
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "learnAudioSignal failed: ${t.message}", t)
-                runOnUiThread {
-                    result.error("LEARN_FAILED", t.message ?: "Audio learning failed", null)
-                }
-            } finally {
-                audioLearningCancelRequested = false
-                learner.cancel()
-                audioLearner = null
-            }
-        }.start()
-    }
-
-    private fun handleCancelUsbLearning(result: MethodChannel.Result) {
-        usbLearningCancelRequested = true
-        usbLearner?.cancel()
-        audioLearningCancelRequested = true
-        audioLearner?.cancel()
-        // Also cancel any concurrent internal-hardware learning sessions so a
-        // single cancel call from the Flutter side covers all active learners.
-        huaweiLearningCancelRequested = true
-        huaweiLearner?.cancel()
-        lgLearningCancelRequested = true
-        lgLearner?.cancel()
-        result.success(true)
-    }
-
-    private fun handleLearnHuaweiSignal(call: MethodCall, result: MethodChannel.Result) {
-        if (huaweiLearner != null) {
-            result.error("LEARN_BUSY", "Huawei IR learning is already active", null)
-            return
-        }
-        if (!HuaweiIrLearner.isSupported(applicationContext)) {
-            result.error(
-                "LEARN_UNSUPPORTED",
-                "This device does not support Huawei IR self-learning",
-                null,
-            )
-            return
-        }
-
-        val timeoutMs = (call.argument<Int>("timeoutMs") ?: 30_000).coerceIn(1_000, 60_000)
-        huaweiLearningCancelRequested = false
-
-        Thread {
-            var learner: HuaweiIrLearner? = null
-            try {
-                val opened = HuaweiIrLearner.open(applicationContext)
-                if (opened == null) {
-                    runOnUiThread {
-                        result.error(
-                            "LEARN_OPEN_FAILED",
-                            "Could not initialize Huawei IR learning hardware",
-                            null,
-                        )
-                    }
-                    return@Thread
-                }
-                learner = opened
-                huaweiLearner = opened
-
-                val learned = opened.learn(timeoutMs) { huaweiLearningCancelRequested }
-
-                runOnUiThread {
-                    when {
-                        huaweiLearningCancelRequested -> result.success(null)
-                        learned != null -> result.success(learned.toWireMap())
-                        else -> result.error(
-                            "LEARN_TIMEOUT",
-                            "No IR signal was captured before the listening window expired",
-                            null,
-                        )
-                    }
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "learnHuaweiSignal failed: ${t.message}", t)
-                runOnUiThread {
-                    result.error("LEARN_FAILED", t.message ?: "Huawei IR learning failed", null)
-                }
-            } finally {
-                huaweiLearningCancelRequested = false
-                learner?.cancel()
-                huaweiLearner = null
-            }
-        }.start()
-    }
-
-    private fun handleCancelHuaweiLearning(result: MethodChannel.Result) {
-        huaweiLearningCancelRequested = true
-        huaweiLearner?.cancel()
-        result.success(true)
-    }
-
-    private fun handleLearnLgSignal(call: MethodCall, result: MethodChannel.Result) {
-        if (lgLearner != null) {
-            result.error("LEARN_BUSY", "LG IR learning is already active", null)
-            return
-        }
-        if (!LgIrLearner.isSupported(applicationContext)) {
-            result.error(
-                "LEARN_UNSUPPORTED",
-                "This device does not have the LG UEI Quickset IR service",
-                null,
-            )
-            return
-        }
-
-        val timeoutMs = (call.argument<Int>("timeoutMs") ?: 30_000).coerceIn(1_000, 60_000)
-        lgLearningCancelRequested = false
-
-        Thread {
-            var learner: LgIrLearner? = null
-            try {
-                val opened = LgIrLearner.open(applicationContext)
-                if (opened == null) {
-                    runOnUiThread {
-                        result.error(
-                            "LEARN_OPEN_FAILED",
-                            "Could not connect to LG UEI Quickset service",
-                            null,
-                        )
-                    }
-                    return@Thread
-                }
-                learner = opened
-                lgLearner = opened
-
-                if (!opened.isLearningSupported()) {
-                    runOnUiThread {
-                        result.error(
-                            "LEARN_UNSUPPORTED",
-                            "This LG device does not support IR learning",
-                            null,
-                        )
-                    }
-                    return@Thread
-                }
-
-                val learned = opened.learn(timeoutMs) { lgLearningCancelRequested }
-
-                runOnUiThread {
-                    when {
-                        lgLearningCancelRequested -> result.success(null)
-                        learned != null           -> result.success(learned.toWireMap())
-                        else -> result.error(
-                            "LEARN_TIMEOUT",
-                            "No IR signal was captured before the listening window expired",
-                            null,
-                        )
-                    }
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "learnLgSignal failed: ${t.message}", t)
-                runOnUiThread {
-                    result.error("LEARN_FAILED", t.message ?: "LG IR learning failed", null)
-                }
-            } finally {
-                lgLearningCancelRequested = false
-                learner?.cancel()
-                lgLearner = null
-            }
-        }.start()
-    }
-
-    private fun handleCancelLgLearning(result: MethodChannel.Result) {
-        lgLearningCancelRequested = true
-        lgLearner?.cancel()
-        result.success(true)
-    }
-
-    private fun handleReplayLearnedUsbSignal(call: MethodCall, result: MethodChannel.Result) {
-        val family = (call.argument<String>("family") ?: "").trim().lowercase()
-        val frameBase64 = (call.argument<String>("opaqueFrameBase64") ?: "").trim()
-        if ((family != "tiqiaa" && family != "elksmart" && family != "audio") || frameBase64.isEmpty()) {
-            result.error("BAD_LEARNED_SIGNAL", "Missing learned USB frame payload", null)
-            return
-        }
-
-        val frame = try {
-            Base64.decode(frameBase64, Base64.DEFAULT)
-        } catch (t: Throwable) {
-            result.error("BAD_LEARNED_SIGNAL", "Opaque learned frame is not valid Base64", null)
-            return
-        }
-
-        if (family == "audio") {
-            val mode = ((call.argument<Int>("opaqueMeta") ?: currentAudioModeOrNull()?.toInt() ?: 1)
-                .coerceIn(1, 2)).toShort()
-            val ok = AudioCapturedIrPlayer.playMonoPcm16(frame, 44_100, mode)
-            result.success(ok)
-            return
-        }
-
-        val disc = usbDiscovery
-        val mgr = usbManager
-        if (disc == null || mgr == null) {
-            result.error("NO_USB", "UsbManager not available", null)
-            return
-        }
-        val dev = try {
-            disc.scanSupported().firstOrNull {
-                when (family) {
-                    "tiqiaa" -> UsbDeviceFilter.isTiqiaaTviewFamily(it)
-                    "elksmart" -> UsbDeviceFilter.isElkSmart(it)
-                    else -> false
-                }
-            }
-        } catch (_: Throwable) {
-            null
-        }
-        if (dev == null) {
-            result.error("NO_USB_DEVICE", "No matching USB IR dongle is attached", null)
-            return
-        }
-        if (!mgr.hasPermission(dev)) {
-            disc.requestPermission(dev)
-            result.error("USB_PERMISSION_REQUIRED", "USB permission is required for the attached dongle.", null)
-            return
-        }
-
-        val sessionDevice = beginUsbLearningSession { it.deviceId == dev.deviceId }
-        if (sessionDevice == null) {
-            result.error("LEARNED_REPLAY_FAILED", "The USB IR dongle could not be prepared for replay", null)
-            return
-        }
-
-        Thread {
-            var learner: UsbLearnerSession? = null
-            try {
-                val ok = when (family) {
-                    "tiqiaa" -> {
-                        val tiqiaaLearner = openTiqiaaLearnerDevice(sessionDevice)
-                        learner = tiqiaaLearner
-                        usbLearner = tiqiaaLearner
-                        tiqiaaLearner?.replayOpaqueFrame(frame) == true
-                    }
-                    "elksmart" -> {
-                        val pattern = ElkSmartUsbLearner.decodeOpaqueFrameToPattern(frame)
-                        if (pattern.isEmpty()) {
-                            false
-                        } else {
-                            val tx = openUsbDevice(sessionDevice)
-                            try {
-                                tx?.transmitRaw(38000, pattern) == true
-                            } finally {
-                                tx?.closeSafely()
-                            }
-                        }
-                    }
-                    else -> false
-                }
-                runOnUiThread {
-                    if (ok) {
-                        result.success(true)
-                    } else {
-                        result.error("LEARNED_REPLAY_FAILED", "The learned signal could not be replayed", null)
-                    }
-                }
-            } catch (t: Throwable) {
-                Log.w(TAG, "replayLearnedUsbSignal failed: ${t.message}", t)
-                runOnUiThread {
-                    result.error("LEARNED_REPLAY_FAILED", t.message ?: "Replay failed", null)
-                }
-            } finally {
-                learner?.closeSafely()
-                endUsbLearningSession("usb_learning_replay_finished")
-            }
-        }.start()
-    }
-
     private fun handleUsbScanAndRequest(result: MethodChannel.Result) {
         val disc = usbDiscovery
         val mgr = usbManager
@@ -2070,10 +1547,4 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun UsbLearnerSession.closeSafely() {
-        try {
-            close()
-        } catch (_: Throwable) {
-        }
-    }
 }
