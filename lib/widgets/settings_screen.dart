@@ -8,7 +8,6 @@ import 'package:everythingbgone/state/home_surface_prefs.dart';
 import 'package:everythingbgone/state/app_theme.dart';
 import 'package:everythingbgone/state/dynamic_color.dart';
 import 'package:everythingbgone/state/remote_display_prefs.dart';
-import 'package:everythingbgone/state/transmit_cycle_prefs.dart';
 import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
 import 'package:everythingbgone/widgets/about_screen.dart';
 import 'package:everythingbgone/widgets/settings/widgets/section_card.dart';
@@ -555,58 +554,6 @@ class SettingsScreen extends StatelessWidget {
                       ),
                     );
                   },
-                );
-              },
-            ),
-            const Divider(height: 1),
-            AnimatedBuilder(
-              animation: TransmitCyclePrefs.instance,
-              builder: (context, _) {
-                final reactionMs = TransmitCyclePrefs.instance.reactionTimeMs;
-                final seconds = (reactionMs / 1000).toStringAsFixed(1);
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.timer_outlined),
-                        title: Text(context.l10n.reactionTimeTitle),
-                        subtitle: Text(context.l10n.reactionTimeSubtitle),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 56, right: 8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Slider(
-                                value: reactionMs.toDouble(),
-                                min: 0,
-                                max: TransmitCyclePrefs.maxReactionTimeMs
-                                    .toDouble(),
-                                divisions:
-                                    TransmitCyclePrefs.maxReactionTimeMs ~/
-                                        100,
-                                label: context.l10n
-                                    .reactionTimeValueLabel(seconds),
-                                onChanged: (v) => TransmitCyclePrefs.instance
-                                    .setReactionTimeMs(v.round()),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 44,
-                              child: Text(
-                                context.l10n.reactionTimeValueLabel(seconds),
-                                textAlign: TextAlign.end,
-                                style: Theme.of(context).textTheme.labelMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 );
               },
             ),

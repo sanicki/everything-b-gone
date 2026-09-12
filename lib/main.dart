@@ -10,7 +10,6 @@ import 'package:everythingbgone/state/dynamic_color.dart';
 import 'package:everythingbgone/state/haptics.dart';
 import 'package:everythingbgone/state/orientation_pref.dart';
 import 'package:everythingbgone/state/remote_display_prefs.dart';
-import 'package:everythingbgone/state/transmit_cycle_prefs.dart';
 import 'package:everythingbgone/state/transmitter_prefs.dart';
 import 'package:everythingbgone/flipper_irdb/kill_switch_action.dart';
 import 'package:flutter/services.dart';
@@ -39,7 +38,6 @@ Future<void> main() async {
       RemoteOrientationController.instance.load(),
       RemoteDisplayController.instance.load(),
       TransmitterPrefs.instance.load(),
-      TransmitCyclePrefs.instance.load(),
       // lazy import to avoid circulars; we refer by string to keep tool happy
     ]);
   } catch (e, st) {

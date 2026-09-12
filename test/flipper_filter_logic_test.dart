@@ -221,28 +221,56 @@ void main() {
 
       expect(matchingPowerSignals(files), hasLength(1));
     });
+  });
 
-    test('matchingPowerBrandSignals pairs each surviving signal with its brand',
+  group('buildSignalListGroups', () {
+    test('groups by device type then brand, both sorted alphabetically', () {
+      final files = [
+        _file('Soundbars', 'Sony'),
+        _file('TVs', 'LG'),
+        _file('TVs', 'Samsung'),
+      ];
+
+      final groups = buildSignalListGroups(files);
+      expect(groups.map((g) => g.deviceType), ['Soundbars', 'TVs']);
+      expect(groups.last.rows.map((r) => r.brand), ['LG', 'Samsung']);
+    });
+
+    test('a lone file for a brand gets no option label', () {
+      final groups = buildSignalListGroups([_file('TVs', 'Samsung')]);
+      expect(groups.single.rows.single.optionLabel, isNull);
+    });
+
+    test('multiple files for the same brand are numbered by file name order',
         () {
       final files = [
         FlipperIrFile(
           deviceType: 'TVs',
           brand: 'Samsung',
-          fileName: 'samsung.ir',
-          path: 'TVs/Samsung/samsung.ir',
-          signals: const [
-            FlipperIrSignal(name: 'Power', rawData: '1 1', frequencyHz: 38000),
-          ],
+          fileName: 'model_b.ir',
+          path: 'TVs/Samsung/model_b.ir',
+          signals: const [FlipperIrSignal(name: 'Power')],
         ),
         FlipperIrFile(
           deviceType: 'TVs',
-          brand: 'LG',
-          fileName: 'lg.ir',
-          path: 'TVs/LG/lg.ir',
-          signals: const [
-            FlipperIrSignal(name: 'Power', rawData: '2 2', frequencyHz: 38000),
-          ],
+          brand: 'Samsung',
+          fileName: 'model_a.ir',
+          path: 'TVs/Samsung/model_a.ir',
+          signals: const [FlipperIrSignal(name: 'Power')],
         ),
+      ];
+
+      final rows = buildSignalListGroups(files).single.rows;
+      expect(rows, hasLength(2));
+      expect(rows[0].file.fileName, 'model_a.ir');
+      expect(rows[0].optionLabel, 'Option 1');
+      expect(rows[1].file.fileName, 'model_b.ir');
+      expect(rows[1].optionLabel, 'Option 2');
+    });
+
+    test('a file with neither a power/off nor a mute signal is skipped', () {
+      final files = [
+        _file('TVs', 'Samsung'),
         FlipperIrFile(
           deviceType: 'TVs',
           brand: 'Vizio',
@@ -252,64 +280,59 @@ void main() {
         ),
       ];
 
-      final result = matchingPowerBrandSignals(files);
-
-      expect(result, hasLength(2), reason: 'Vizio has no power/off signal');
-      expect(result.map((m) => m.brand), ['Samsung', 'LG']);
-      expect(result.map((m) => m.signal.name), everyElement('Power'));
-    });
-  });
-
-  group('nextBrandSkipTarget', () {
-    test(
-        'is a no-op (equals attempted) once the just-sent brand has no more '
-        'entries — the common case after dedup, not an edge case', () {
-      final brands = ['Samsung', 'LG', 'Sony', 'Vizio'];
-
-      // Samsung already sent (index 0): the next candidate (LG) is already
-      // a different brand, so skipping does nothing.
-      expect(nextBrandSkipTarget(brands, 1), 1);
-      expect(nextBrandSkipTarget(brands, 2), 2);
-      expect(nextBrandSkipTarget(brands, 3), 3);
+      final rows = buildSignalListGroups(files).single.rows;
+      expect(rows, hasLength(1));
+      expect(rows.single.brand, 'Samsung');
     });
 
-    test('skips every remaining signal that shares the just-sent brand', () {
-      final brands = ['Sony', 'Sony', 'Sony', 'LG', 'Vizio'];
+    test('option numbering stays stable even when a same-brand file is skipped',
+        () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_a.ir',
+          path: 'TVs/Samsung/model_a.ir',
+          signals: const [FlipperIrSignal(name: 'Vol_up')], // no power/mute
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_b.ir',
+          path: 'TVs/Samsung/model_b.ir',
+          signals: const [FlipperIrSignal(name: 'Power')],
+        ),
+      ];
 
-      // First Sony signal just sent (index 0); two more Sony entries remain.
-      expect(nextBrandSkipTarget(brands, 1), 3);
-      // Nothing sent yet, but the upcoming brand (Sony) still has 3 entries
-      // — skipping jumps straight past all of them.
-      expect(nextBrandSkipTarget(brands, 0), 3);
-      // Already past all of Sony's entries: nothing left to skip.
-      expect(nextBrandSkipTarget(brands, 3), 3);
+      final rows = buildSignalListGroups(files).single.rows;
+      expect(rows, hasLength(1));
+      expect(rows.single.file.fileName, 'model_b.ir');
+      expect(rows.single.optionLabel, 'Option 2',
+          reason: 'numbering reflects position among all same-brand files, '
+              'not just the ones that survive filtering');
     });
 
-    test('skipping the last brand reaches the end of the list', () {
-      final brands = ['Sony', 'LG', 'LG'];
+    test('a device type with zero qualifying rows is omitted entirely', () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'Fans',
+          brand: 'Generic',
+          fileName: 'f.ir',
+          path: 'Fans/Generic/f.ir',
+          signals: const [FlipperIrSignal(name: 'Speed')],
+        ),
+        _file('TVs', 'Samsung'),
+      ];
 
-      // Sony sent (index 0); now on LG's first entry (index 1) — the last
-      // brand in the list, with one more LG entry remaining.
-      expect(nextBrandSkipTarget(brands, 2), 3);
-      // Already past both LG entries: nothing left to skip.
-      expect(nextBrandSkipTarget(brands, 3), 3);
-    });
-  });
-
-  group('currentSkipBrand', () {
-    test('is the just-sent brand once something has sent', () {
-      final brands = ['Sony', 'LG', 'Vizio'];
-      expect(currentSkipBrand(brands, 1), 'Sony');
-      expect(currentSkipBrand(brands, 2), 'LG');
-      expect(currentSkipBrand(brands, 3), 'Vizio');
+      final groups = buildSignalListGroups(files);
+      expect(groups.map((g) => g.deviceType), ['TVs']);
     });
 
-    test('is the upcoming brand when nothing has sent yet', () {
-      expect(currentSkipBrand(['Sony', 'LG'], 0), 'Sony');
-    });
-
-    test('is null for an empty list', () {
-      expect(currentSkipBrand(<String>[], 0), isNull);
+    test('power and mute signals on a row match powerOrOffSignalFor/muteSignalFor',
+        () {
+      final rows = buildSignalListGroups([_file('TVs', 'Samsung')]).single.rows;
+      expect(rows.single.powerSignal?.name, 'Power');
+      expect(rows.single.muteSignal?.name, 'Mute');
     });
   });
 }

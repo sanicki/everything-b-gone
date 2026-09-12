@@ -65,92 +65,104 @@ List<FlipperIrFile> filterFiles(
   }).toList();
 }
 
-/// A candidate signal paired with the brand of the file it came from, so
-/// a run can skip every remaining signal for one brand without needing to
-/// know anything about [FlipperIrSignal] beyond what [matchingPowerSignals]
-/// already exposes.
-class BrandSignal {
-  final String brand;
-  final FlipperIrSignal signal;
-
-  const BrandSignal({required this.brand, required this.signal});
-}
-
-/// The Power button's candidates across the filtered file set: one per
-/// file at most (a file's own power-then-off preference, via
+/// The Power button's candidate signals across the filtered file set: one
+/// per file at most (a file's own power-then-off preference, via
 /// [powerOrOffSignalFor]), skipping files with neither, then deduplicated
 /// so identical transmissions (common across models sharing a protocol)
-/// are only sent once per cycle. Order is preserved, brand included.
-List<BrandSignal> matchingPowerBrandSignals(List<FlipperIrFile> filteredFiles) {
-  return _dedupeBrandSignals(filteredFiles, powerOrOffSignalFor);
-}
-
-/// The Mute button's candidates across the filtered file set, deduplicated
-/// the same way as [matchingPowerBrandSignals].
-List<BrandSignal> matchingMuteBrandSignals(List<FlipperIrFile> filteredFiles) {
-  return _dedupeBrandSignals(filteredFiles, muteSignalFor);
-}
-
-/// Same as [matchingPowerBrandSignals], without the brand — kept for
-/// callers (and existing tests) that only need the signals themselves.
+/// are only sent once per cycle.
 List<FlipperIrSignal> matchingPowerSignals(List<FlipperIrFile> filteredFiles) {
-  return matchingPowerBrandSignals(filteredFiles)
-      .map((m) => m.signal)
-      .toList(growable: false);
+  return _dedupeSignals(
+    filteredFiles.map(powerOrOffSignalFor).whereType<FlipperIrSignal>(),
+  );
 }
 
-/// Same as [matchingMuteBrandSignals], without the brand.
+/// The Mute button's candidate signals across the filtered file set,
+/// deduplicated the same way as [matchingPowerSignals].
 List<FlipperIrSignal> matchingMuteSignals(List<FlipperIrFile> filteredFiles) {
-  return matchingMuteBrandSignals(filteredFiles)
-      .map((m) => m.signal)
-      .toList(growable: false);
+  return _dedupeSignals(
+    filteredFiles.map(muteSignalFor).whereType<FlipperIrSignal>(),
+  );
 }
 
-List<BrandSignal> _dedupeBrandSignals(
-  List<FlipperIrFile> filteredFiles,
-  FlipperIrSignal? Function(FlipperIrFile) pick,
-) {
+List<FlipperIrSignal> _dedupeSignals(Iterable<FlipperIrSignal> signals) {
   final seenKeys = <String>{};
-  final result = <BrandSignal>[];
-  for (final file in filteredFiles) {
-    final signal = pick(file);
-    if (signal == null) continue;
+  final result = <FlipperIrSignal>[];
+  for (final signal in signals) {
     if (seenKeys.add(signal.dedupeKey)) {
-      result.add(BrandSignal(brand: file.brand, signal: signal));
+      result.add(signal);
     }
   }
   return result;
 }
 
-/// The brand a "skip this brand" action targets: whichever brand the
-/// just-sent candidate belongs to (index `attempted - 1`), or — if nothing
-/// has sent yet — the brand about to send (index `attempted`). Null if
-/// [brands] is empty or `attempted` is out of range.
-String? currentSkipBrand(List<String> brands, int attempted) {
-  if (brands.isEmpty) return null;
-  final refIndex =
-      attempted > 0 ? attempted - 1 : (attempted < brands.length ? attempted : -1);
-  if (refIndex < 0 || refIndex >= brands.length) return null;
-  return brands[refIndex];
+/// One row on the manual signal-testing (List) screen: a single file's
+/// Brand, an "Option N" disambiguator when multiple files share that Brand
+/// within the same Device Type, and its power/mute test signals (either may
+/// be null if the file lacks that kind of signal).
+class SignalListRow {
+  final FlipperIrFile file;
+  final String? optionLabel;
+  final FlipperIrSignal? powerSignal;
+  final FlipperIrSignal? muteSignal;
+
+  const SignalListRow({
+    required this.file,
+    required this.optionLabel,
+    required this.powerSignal,
+    required this.muteSignal,
+  });
+
+  String get brand => file.brand;
 }
 
-/// Where a "skip this brand" action should jump `attempted` to: past every
-/// remaining entry in [brands] that shares [currentSkipBrand]'s brand.
-/// Always `>= attempted`.
-///
-/// Equals `attempted` itself whenever there's nothing left of that brand
-/// to skip — which is the *common* case, not an edge case: dedup already
-/// collapses most brands down to a single signal, so the very next
-/// candidate is usually already a different brand. Callers must treat a
-/// result equal to `attempted` as "skipping would do nothing" rather than
-/// assuming a "skip this brand" affordance always has something to skip
-/// past.
-int nextBrandSkipTarget(List<String> brands, int attempted) {
-  final referenceBrand = currentSkipBrand(brands, attempted);
-  if (referenceBrand == null) return brands.length;
-  var target = attempted;
-  while (target < brands.length && brands[target] == referenceBrand) {
-    target++;
+/// One Device Type section for the List screen: its rows, grouped by Brand.
+class SignalListGroup {
+  final String deviceType;
+  final List<SignalListRow> rows;
+
+  const SignalListGroup({required this.deviceType, required this.rows});
+}
+
+/// Builds the List screen's Device Type -> Brand row groups from an
+/// already-filtered file set. Brands are numbered "Option N" using their
+/// position among same-brand files *before* skipping ones with neither a
+/// power/off nor a mute signal, so a file's label stays stable regardless of
+/// what else in that brand happens to qualify; a brand with only one file
+/// gets no option label at all. Device types and brands are both sorted
+/// alphabetically for a stable, predictable order.
+List<SignalListGroup> buildSignalListGroups(List<FlipperIrFile> filteredFiles) {
+  final byType = <String, List<FlipperIrFile>>{};
+  for (final file in filteredFiles) {
+    byType.putIfAbsent(file.deviceType, () => <FlipperIrFile>[]).add(file);
   }
-  return target;
+
+  final groups = <SignalListGroup>[];
+  for (final deviceType in byType.keys.toList()..sort()) {
+    final byBrand = <String, List<FlipperIrFile>>{};
+    for (final file in byType[deviceType]!) {
+      byBrand.putIfAbsent(file.brand, () => <FlipperIrFile>[]).add(file);
+    }
+
+    final rows = <SignalListRow>[];
+    for (final brand in byBrand.keys.toList()..sort()) {
+      final files = byBrand[brand]!..sort((a, b) => a.fileName.compareTo(b.fileName));
+      final multiple = files.length > 1;
+      for (var i = 0; i < files.length; i++) {
+        final power = powerOrOffSignalFor(files[i]);
+        final mute = muteSignalFor(files[i]);
+        if (power == null && mute == null) continue;
+        rows.add(SignalListRow(
+          file: files[i],
+          optionLabel: multiple ? 'Option ${i + 1}' : null,
+          powerSignal: power,
+          muteSignal: mute,
+        ));
+      }
+    }
+
+    if (rows.isNotEmpty) {
+      groups.add(SignalListGroup(deviceType: deviceType, rows: rows));
+    }
+  }
+  return groups;
 }
