@@ -9,13 +9,13 @@ class RemoteDisplayController extends ChangeNotifier {
   static const String _showButtonMetadataKey =
       'remote_view_show_button_metadata_v1';
 
-  bool _showButtonMetadata = true;
+  bool _showButtonMetadata = false;
   bool get showButtonMetadata => _showButtonMetadata;
 
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _showButtonMetadata = prefs.getBool(_showButtonMetadataKey) ?? true;
+      _showButtonMetadata = prefs.getBool(_showButtonMetadataKey) ?? false;
       notifyListeners();
     } catch (_) {}
   }
