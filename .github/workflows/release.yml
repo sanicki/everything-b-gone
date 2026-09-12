@@ -1,13 +1,135 @@
-name: release
-
-flutter-version: '8b872868494e429d94fa06dca855c306438b22c0'
+name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version part to increment"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
 
 jobs:
-  noop:
+  release:
     runs-on: ubuntu-latest
     steps:
-      - name: noop
-        run: echo "ok"
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          submodules: true
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        run: |
+          set -euo pipefail
+
+          current_version_line=$(grep -m1 '^version:' pubspec.yaml)
+          current_full="${current_version_line#version: }"
+          current_name="${current_full%%+*}"
+          current_build="${current_full##*+}"
+
+          latest_tag=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1 || true)
+          if [ -z "$latest_tag" ]; then
+            base_version="0.1.0"
+          else
+            base_version="${latest_tag#v}"
+          fi
+
+          IFS='.' read -r major minor patch <<< "$base_version"
+          case "${{ github.event.inputs.bump }}" in
+            major) major=$((major + 1)); minor=0; patch=0 ;;
+            minor) minor=$((minor + 1)); patch=0 ;;
+            patch) patch=$((patch + 1)) ;;
+          esac
+          next_version="$major.$minor.$patch"
+          next_build=$((current_build + 1))
+          next_tag="v$next_version"
+
+          echo "Bumping $current_name+$current_build -> $next_version+$next_build ($next_tag)"
+          echo "version=$next_version" >> "$GITHUB_OUTPUT"
+          echo "build_number=$next_build" >> "$GITHUB_OUTPUT"
+          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Update pubspec.yaml
+        run: |
+          set -euo pipefail
+          sed -i "s/^version: .*/version: ${{ steps.version.outputs.version }}+${{ steps.version.outputs.build_number }}/" pubspec.yaml
+          grep -m1 '^version:' pubspec.yaml
+
+      - name: Resolve dependencies
+        run: ./.flutter/bin/flutter --no-version-check pub get
+
+      - name: Run tests
+        run: ./.flutter/bin/flutter --no-version-check test
+
+      - name: Decode signing keystore
+        id: signing
+        run: |
+          set -euo pipefail
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ] && \
+             [ -n "${{ secrets.KEYSTORE_PASSWORD }}" ] && \
+             [ -n "${{ secrets.KEY_ALIAS }}" ] && \
+             [ -n "${{ secrets.KEY_PASSWORD }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+            cat > android/app/key.properties <<EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=release.keystore
+          EOF
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No release keystore secrets found (KEYSTORE_BASE64/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD) — building a debug-signed release APK instead."
+          fi
+
+      - name: Build release APK
+        run: ./.flutter/bin/flutter --no-version-check build apk --release
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          set -euo pipefail
+          previous_tag=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1 || true)
+          {
+            echo "notes<<EOF"
+            if [ "${{ steps.signing.outputs.signed }}" != "true" ]; then
+              echo "⚠️ **Unsigned build** — no release keystore secrets were configured, so this APK is debug-signed. It will not upgrade-install over a differently-signed build."
+              echo
+            fi
+            echo "### Changes"
+            if [ -n "$previous_tag" ]; then
+              git log "$previous_tag"..HEAD --no-merges --pretty=format:"- %s" -- . ':!fastlane' || true
+            else
+              git log --no-merges --pretty=format:"- %s" -n 50
+            fi
+            echo
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Tag release
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          git commit -m "chore: release ${{ steps.version.outputs.tag }}"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin main
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "Everything-B-Gone ${{ steps.version.outputs.tag }}"
+          body: ${{ steps.notes.outputs.notes }}
+          files: build/app/outputs/flutter-apk/app-release.apk

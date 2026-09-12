@@ -1,0 +1,32 @@
+name: PR build
+
+on:
+  pull_request:
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Resolve dependencies
+        run: ./.flutter/bin/flutter --no-version-check pub get
+
+      - name: Analyze
+        run: ./.flutter/bin/flutter --no-version-check analyze --no-fatal-infos
+
+      - name: Run tests
+        run: ./.flutter/bin/flutter --no-version-check test
+
+      - name: Build debug APK
+        run: ./.flutter/bin/flutter --no-version-check build apk --debug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: everythingbgone-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
