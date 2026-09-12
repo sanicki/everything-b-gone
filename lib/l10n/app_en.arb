@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "IR Blaster",
+  "appTitle": "Everything-B-Gone",
   "loading": "Loading…",
   "unknownError": "Unknown error",
   "failedToStart": "Failed to start",
@@ -141,7 +141,7 @@
   "unavailableOnThisDevice": "Unavailable on this device",
   "openOnUsbAttachTitle": "Open on USB attach",
   "openOnUsbAttachSubtitle": "Android may suggest opening the app when a supported USB IR dongle is connected.",
-  "openOnUsbAttachEnabledMessage": "Will suggest opening IR Blaster when a supported USB dongle is attached.",
+  "openOnUsbAttachEnabledMessage": "Will suggest opening Everything-B-Gone when a supported USB dongle is attached.",
   "openOnUsbAttachDisabledMessage": "Won't suggest opening on USB attach.",
   "failedToUpdateSetting": "Failed to update setting.",
   "skip": "Skip",

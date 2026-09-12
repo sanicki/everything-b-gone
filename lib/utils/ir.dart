@@ -192,7 +192,7 @@ void _reportFlutterError(String where, Object error, StackTrace stack) {
     FlutterErrorDetails(
       exception: error,
       stack: stack,
-      library: 'IR Blaster',
+      library: 'Everything-B-Gone',
       context: ErrorDescription(where),
       informationCollector: () sync* {
         yield DiagnosticsProperty<String>('channel', platform.name);

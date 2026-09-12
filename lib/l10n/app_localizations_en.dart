@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'IR Blaster';
+  String get appTitle => 'Everything-B-Gone';
 
   @override
   String get loading => 'Loading…';
@@ -386,7 +386,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openOnUsbAttachEnabledMessage =>
-      'Will suggest opening IR Blaster when a supported USB dongle is attached.';
+      'Will suggest opening Everything-B-Gone when a supported USB dongle is attached.';
 
   @override
   String get openOnUsbAttachDisabledMessage =>
