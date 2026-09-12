@@ -222,4 +222,117 @@ void main() {
       expect(matchingPowerSignals(files), hasLength(1));
     });
   });
+
+  group('buildSignalListGroups', () {
+    test('groups by device type then brand, both sorted alphabetically', () {
+      final files = [
+        _file('Soundbars', 'Sony'),
+        _file('TVs', 'LG'),
+        _file('TVs', 'Samsung'),
+      ];
+
+      final groups = buildSignalListGroups(files);
+      expect(groups.map((g) => g.deviceType), ['Soundbars', 'TVs']);
+      expect(groups.last.rows.map((r) => r.brand), ['LG', 'Samsung']);
+    });
+
+    test('a lone file for a brand gets no option label', () {
+      final groups = buildSignalListGroups([_file('TVs', 'Samsung')]);
+      expect(groups.single.rows.single.optionLabel, isNull);
+    });
+
+    test('multiple files for the same brand are numbered by file name order',
+        () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_b.ir',
+          path: 'TVs/Samsung/model_b.ir',
+          signals: const [FlipperIrSignal(name: 'Power')],
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_a.ir',
+          path: 'TVs/Samsung/model_a.ir',
+          signals: const [FlipperIrSignal(name: 'Power')],
+        ),
+      ];
+
+      final rows = buildSignalListGroups(files).single.rows;
+      expect(rows, hasLength(2));
+      expect(rows[0].file.fileName, 'model_a.ir');
+      expect(rows[0].optionLabel, 'Option 1');
+      expect(rows[1].file.fileName, 'model_b.ir');
+      expect(rows[1].optionLabel, 'Option 2');
+    });
+
+    test('a file with neither a power/off nor a mute signal is skipped', () {
+      final files = [
+        _file('TVs', 'Samsung'),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Vizio',
+          fileName: 'v.ir',
+          path: 'TVs/Vizio/v.ir',
+          signals: const [FlipperIrSignal(name: 'Vol_up')],
+        ),
+      ];
+
+      final rows = buildSignalListGroups(files).single.rows;
+      expect(rows, hasLength(1));
+      expect(rows.single.brand, 'Samsung');
+    });
+
+    test('option numbering stays stable even when a same-brand file is skipped',
+        () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_a.ir',
+          path: 'TVs/Samsung/model_a.ir',
+          signals: const [FlipperIrSignal(name: 'Vol_up')], // no power/mute
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_b.ir',
+          path: 'TVs/Samsung/model_b.ir',
+          signals: const [FlipperIrSignal(name: 'Power')],
+        ),
+      ];
+
+      final rows = buildSignalListGroups(files).single.rows;
+      expect(rows, hasLength(1));
+      expect(rows.single.file.fileName, 'model_b.ir');
+      expect(rows.single.optionLabel, 'Option 2',
+          reason: 'numbering reflects position among all same-brand files, '
+              'not just the ones that survive filtering');
+    });
+
+    test('a device type with zero qualifying rows is omitted entirely', () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'Fans',
+          brand: 'Generic',
+          fileName: 'f.ir',
+          path: 'Fans/Generic/f.ir',
+          signals: const [FlipperIrSignal(name: 'Speed')],
+        ),
+        _file('TVs', 'Samsung'),
+      ];
+
+      final groups = buildSignalListGroups(files);
+      expect(groups.map((g) => g.deviceType), ['TVs']);
+    });
+
+    test('power and mute signals on a row match powerOrOffSignalFor/muteSignalFor',
+        () {
+      final rows = buildSignalListGroups([_file('TVs', 'Samsung')]).single.rows;
+      expect(rows.single.powerSignal?.name, 'Power');
+      expect(rows.single.muteSignal?.name, 'Mute');
+    });
+  });
 }

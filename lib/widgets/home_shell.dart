@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:everythingbgone/l10n/l10n.dart';
 import 'package:everythingbgone/widgets/everything_bgone_screen.dart';
+import 'package:everythingbgone/widgets/signal_list_screen.dart';
 import 'package:everythingbgone/widgets/settings_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -15,6 +16,7 @@ class _HomeShellState extends State<HomeShell> {
 
   static const List<Widget> _pages = <Widget>[
     EverythingBGoneScreen(),
+    SignalListScreen(),
     SettingsScreen(),
   ];
 
@@ -30,6 +32,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.expand_outlined),
+            selectedIcon: Icon(Icons.expand),
+            label: 'List',
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),

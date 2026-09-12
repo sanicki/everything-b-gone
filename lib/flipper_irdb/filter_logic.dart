@@ -94,3 +94,75 @@ List<FlipperIrSignal> _dedupeSignals(Iterable<FlipperIrSignal> signals) {
   }
   return result;
 }
+
+/// One row on the manual signal-testing (List) screen: a single file's
+/// Brand, an "Option N" disambiguator when multiple files share that Brand
+/// within the same Device Type, and its power/mute test signals (either may
+/// be null if the file lacks that kind of signal).
+class SignalListRow {
+  final FlipperIrFile file;
+  final String? optionLabel;
+  final FlipperIrSignal? powerSignal;
+  final FlipperIrSignal? muteSignal;
+
+  const SignalListRow({
+    required this.file,
+    required this.optionLabel,
+    required this.powerSignal,
+    required this.muteSignal,
+  });
+
+  String get brand => file.brand;
+}
+
+/// One Device Type section for the List screen: its rows, grouped by Brand.
+class SignalListGroup {
+  final String deviceType;
+  final List<SignalListRow> rows;
+
+  const SignalListGroup({required this.deviceType, required this.rows});
+}
+
+/// Builds the List screen's Device Type -> Brand row groups from an
+/// already-filtered file set. Brands are numbered "Option N" using their
+/// position among same-brand files *before* skipping ones with neither a
+/// power/off nor a mute signal, so a file's label stays stable regardless of
+/// what else in that brand happens to qualify; a brand with only one file
+/// gets no option label at all. Device types and brands are both sorted
+/// alphabetically for a stable, predictable order.
+List<SignalListGroup> buildSignalListGroups(List<FlipperIrFile> filteredFiles) {
+  final byType = <String, List<FlipperIrFile>>{};
+  for (final file in filteredFiles) {
+    byType.putIfAbsent(file.deviceType, () => <FlipperIrFile>[]).add(file);
+  }
+
+  final groups = <SignalListGroup>[];
+  for (final deviceType in byType.keys.toList()..sort()) {
+    final byBrand = <String, List<FlipperIrFile>>{};
+    for (final file in byType[deviceType]!) {
+      byBrand.putIfAbsent(file.brand, () => <FlipperIrFile>[]).add(file);
+    }
+
+    final rows = <SignalListRow>[];
+    for (final brand in byBrand.keys.toList()..sort()) {
+      final files = byBrand[brand]!..sort((a, b) => a.fileName.compareTo(b.fileName));
+      final multiple = files.length > 1;
+      for (var i = 0; i < files.length; i++) {
+        final power = powerOrOffSignalFor(files[i]);
+        final mute = muteSignalFor(files[i]);
+        if (power == null && mute == null) continue;
+        rows.add(SignalListRow(
+          file: files[i],
+          optionLabel: multiple ? 'Option ${i + 1}' : null,
+          powerSignal: power,
+          muteSignal: mute,
+        ));
+      }
+    }
+
+    if (rows.isNotEmpty) {
+      groups.add(SignalListGroup(deviceType: deviceType, rows: rows));
+    }
+  }
+  return groups;
+}
