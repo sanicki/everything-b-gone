@@ -221,5 +221,42 @@ void main() {
 
       expect(matchingPowerSignals(files), hasLength(1));
     });
+
+    test('matchingPowerBrandSignals pairs each surviving signal with its brand',
+        () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'samsung.ir',
+          path: 'TVs/Samsung/samsung.ir',
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '1 1', frequencyHz: 38000),
+          ],
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'LG',
+          fileName: 'lg.ir',
+          path: 'TVs/LG/lg.ir',
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '2 2', frequencyHz: 38000),
+          ],
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Vizio',
+          fileName: 'v.ir',
+          path: 'TVs/Vizio/v.ir',
+          signals: const [FlipperIrSignal(name: 'Vol_up')],
+        ),
+      ];
+
+      final result = matchingPowerBrandSignals(files);
+
+      expect(result, hasLength(2), reason: 'Vizio has no power/off signal');
+      expect(result.map((m) => m.brand), ['Samsung', 'LG']);
+      expect(result.map((m) => m.signal.name), everyElement('Power'));
+    });
   });
 }
