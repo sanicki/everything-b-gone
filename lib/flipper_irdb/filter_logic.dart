@@ -122,23 +122,32 @@ List<BrandSignal> _dedupeBrandSignals(
   return result;
 }
 
+/// The brand a "skip this brand" action targets: whichever brand the
+/// just-sent candidate belongs to (index `attempted - 1`), or — if nothing
+/// has sent yet — the brand about to send (index `attempted`). Null if
+/// [brands] is empty or `attempted` is out of range.
+String? currentSkipBrand(List<String> brands, int attempted) {
+  if (brands.isEmpty) return null;
+  final refIndex =
+      attempted > 0 ? attempted - 1 : (attempted < brands.length ? attempted : -1);
+  if (refIndex < 0 || refIndex >= brands.length) return null;
+  return brands[refIndex];
+}
+
 /// Where a "skip this brand" action should jump `attempted` to: past every
-/// remaining entry in [brands] that shares a brand with the one just sent
-/// (index `attempted - 1`), or — if nothing has sent yet — the one about
-/// to send (index `attempted`). Always `>= attempted`.
+/// remaining entry in [brands] that shares [currentSkipBrand]'s brand.
+/// Always `>= attempted`.
 ///
 /// Equals `attempted` itself whenever there's nothing left of that brand
 /// to skip — which is the *common* case, not an edge case: dedup already
 /// collapses most brands down to a single signal, so the very next
 /// candidate is usually already a different brand. Callers must treat a
 /// result equal to `attempted` as "skipping would do nothing" rather than
-/// assuming a "Next Brand" affordance always has something to skip past.
+/// assuming a "skip this brand" affordance always has something to skip
+/// past.
 int nextBrandSkipTarget(List<String> brands, int attempted) {
-  if (brands.isEmpty) return 0;
-  final refIndex =
-      attempted > 0 ? attempted - 1 : (attempted < brands.length ? attempted : -1);
-  if (refIndex < 0 || refIndex >= brands.length) return brands.length;
-  final referenceBrand = brands[refIndex];
+  final referenceBrand = currentSkipBrand(brands, attempted);
+  if (referenceBrand == null) return brands.length;
   var target = attempted;
   while (target < brands.length && brands[target] == referenceBrand) {
     target++;
