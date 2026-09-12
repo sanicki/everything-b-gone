@@ -4,7 +4,6 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:everythingbgone/state/app_locale.dart';
 import 'package:everythingbgone/state/app_shortcuts.dart';
 import 'package:everythingbgone/state/app_theme.dart';
 import 'package:everythingbgone/state/dynamic_color.dart';
@@ -32,7 +31,6 @@ Future<void> main() async {
   };
   try {
     await AppThemeController.instance.load();
-    await AppLocaleController.instance.load();
     await DynamicColorController.instance.load();
     // Load global interaction preferences
     await Future.wait([
@@ -102,7 +100,6 @@ class _App extends StatelessWidget {
     return AnimatedBuilder(
       animation: Listenable.merge([
         AppThemeController.instance,
-        AppLocaleController.instance,
         DynamicColorController.instance,
       ]),
       builder: (context, _) {
@@ -122,7 +119,6 @@ class _App extends StatelessWidget {
               onGenerateTitle: (context) => context.l10n.appTitle,
               debugShowCheckedModeBanner: false,
               navigatorKey: _navKey,
-              locale: AppLocaleController.instance.overrideLocale,
               localizationsDelegates: const [
                 AppLocalizations.delegate,
                 GlobalMaterialLocalizations.delegate,
@@ -130,10 +126,6 @@ class _App extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: AppLocalizations.supportedLocales,
-              localeResolutionCallback: (locale, supportedLocales) {
-                return AppLocaleController.instance
-                    .resolveActiveLocale(supportedLocales.toList(), locale);
-              },
               themeMode: AppThemeController.instance.mode,
               theme: ThemeData(
                   useMaterial3: true,

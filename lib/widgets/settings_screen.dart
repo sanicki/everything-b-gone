@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:everythingbgone/config/build_flags.dart';
-import 'package:everythingbgone/l10n/app_localizations.dart';
 import 'package:everythingbgone/l10n/l10n.dart';
-import 'package:everythingbgone/state/app_locale.dart';
 import 'package:everythingbgone/state/orientation_pref.dart';
 import 'package:flutter/services.dart';
 import 'package:everythingbgone/state/haptics.dart';
@@ -37,31 +35,6 @@ class SettingsScreen extends StatelessWidget {
       'bc1qtf79uecssueu4u4u86zct46vcs0vcd2cnmvw6f';
   static const String _ethAddress =
       '0xCaCc52Cd2D534D869a5C61dD3cAac57455f3c2fD';
-  static const Map<String, String> _languageNativeNames = <String, String>{
-    'en': 'English',
-    'fr': 'Français',
-    'es': 'Español',
-    'de': 'Deutsch',
-    'it': 'Italiano',
-    'pt': 'Português',
-    'pt_BR': 'Português (Brasil)',
-    'ja': '日本語',
-    'ko': '한국어',
-    'zh': '中文',
-    'ru': 'Русский',
-    'ar': 'العربية',
-    'ar_EG': 'العربية (مصر)',
-    'hi': 'हिन्दी',
-    'id': 'Bahasa Indonesia',
-    'ms': 'Bahasa Melayu',
-    'th': 'ไทย',
-    'tr': 'Türkçe',
-    'vi': 'Tiếng Việt',
-    'pl': 'Polski',
-    'fil': 'Filipino',
-    'uk': 'Українська',
-    'nl': 'Nederlands',
-  };
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     try {
@@ -133,132 +106,6 @@ class SettingsScreen extends StatelessWidget {
     await Haptics.selectionClick();
   }
 
-  Future<void> _changeAppLanguage(BuildContext context, Locale? locale) async {
-    await AppLocaleController.instance.setOverride(locale);
-    await Haptics.selectionClick();
-  }
-
-  Future<void> _setFollowSystemLanguage(
-      BuildContext context, bool value) async {
-    if (value) {
-      await _changeAppLanguage(context, null);
-      return;
-    }
-    final activeLocale = AppLocaleController.instance.resolveActiveLocale(
-      AppLocalizations.supportedLocales.toList(),
-      Localizations.localeOf(context),
-    );
-    await _changeAppLanguage(context, activeLocale);
-  }
-
-  Future<void> _openLanguagePicker(BuildContext context) async {
-    final locales = AppLocalizations.supportedLocales.toList()
-      ..sort((a, b) =>
-          _getLanguageName(context, a).compareTo(_getLanguageName(context, b)));
-    Locale? selected = AppLocaleController.instance.overrideLocale ??
-        AppLocaleController.instance
-            .resolveActiveLocale(locales, Localizations.localeOf(context));
-    String query = '';
-
-    final picked = await showModalBottomSheet<Locale>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return StatefulBuilder(
-          builder: (ctx2, setModal) {
-            final filtered = locales.where((locale) {
-              final q = query.trim().toLowerCase();
-              if (q.isEmpty) return true;
-              final label = _getLanguageName(ctx2, locale).toLowerCase();
-              final code = locale.toLanguageTag().toLowerCase();
-              return label.contains(q) || code.contains(q);
-            }).toList(growable: false);
-
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 8,
-                bottom: 16 + MediaQuery.of(ctx2).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          context.l10n.chooseAppLanguage,
-                          style: theme.textTheme.titleLarge,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: context.l10n.close,
-                        onPressed: () => Navigator.of(ctx2).pop(),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    onChanged: (value) => setModal(() => query = value),
-                    decoration: InputDecoration(
-                      hintText: context.l10n.searchLanguages,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  if (filtered.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: Text(
-                        context.l10n.noLanguagesFound,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    )
-                  else
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const Divider(height: 0),
-                        itemBuilder: (ctx3, index) {
-                          final locale = filtered[index];
-                          final isSelected = selected == locale;
-                          return ListTile(
-                            leading: Icon(
-                              Icons.translate_rounded,
-                              color:
-                                  isSelected ? theme.colorScheme.primary : null,
-                            ),
-                            title: Text(_getLanguageName(ctx3, locale)),
-                            subtitle: Text(locale.toLanguageTag()),
-                            trailing: isSelected
-                                ? const Icon(Icons.check_rounded)
-                                : null,
-                            onTap: () => Navigator.of(ctx3).pop(locale),
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    if (picked == null || !context.mounted) return;
-    await _changeAppLanguage(context, picked);
-  }
-
   String _getThemeName(BuildContext context, ThemeMode mode) {
     switch (mode) {
       case ThemeMode.system:
@@ -303,18 +150,6 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  String _getLanguageName(BuildContext context, Locale? locale) {
-    if (locale == null) return context.l10n.languageAuto;
-    final tag = locale.toLanguageTag().replaceAll('-', '_');
-    final exactName = _languageNativeNames[tag];
-    if (exactName != null) return exactName;
-    final languageName = _languageNativeNames[locale.languageCode] ??
-        locale.languageCode.toUpperCase();
-    final countryCode = locale.countryCode;
-    if (countryCode == null || countryCode.isEmpty) return languageName;
-    return '$languageName (${countryCode.toUpperCase()})';
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -329,8 +164,6 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 10),
           ],
           _buildAppearanceSection(context),
-          const SizedBox(height: 10),
-          _buildLocalizationSection(context),
           const SizedBox(height: 10),
           _buildInteractionSection(context),
           const SizedBox(height: 10),
@@ -646,156 +479,6 @@ class SettingsScreen extends StatelessWidget {
           fontWeight: FontWeight.w800,
           letterSpacing: 0.5,
         ),
-      ),
-    );
-  }
-
-  Widget _buildLocalizationSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: AnimatedBuilder(
-        animation: AppLocaleController.instance,
-        builder: (context, _) {
-          final localeOverride = AppLocaleController.instance.overrideLocale;
-          final usingSystemLanguage = localeOverride == null;
-          final activeLocale = AppLocaleController.instance.resolveActiveLocale(
-            AppLocalizations.supportedLocales.toList(),
-            Localizations.localeOf(context),
-          );
-          final effectiveLocale = localeOverride ?? activeLocale;
-
-          return SectionCard(
-            title: context.l10n.localizationTitle,
-            subtitle: context.l10n.localizationSubtitle,
-            leading: Icon(Icons.language_rounded, color: cs.primary),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          cs.tertiaryContainer.withValues(alpha: 0.55),
-                          cs.tertiaryContainer.withValues(alpha: 0.25),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                          color: cs.tertiary.withValues(alpha: 0.28)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: cs.tertiary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.translate_rounded,
-                            size: 20,
-                            color: cs.onTertiary,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                usingSystemLanguage
-                                    ? context.l10n.localizationAutoUsing(
-                                        _getLanguageName(
-                                            context, effectiveLocale))
-                                    : _getLanguageName(
-                                        context, effectiveLocale),
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: cs.onTertiaryContainer,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                usingSystemLanguage
-                                    ? context.l10n.localizationAutoDescription
-                                    : context
-                                        .l10n.localizationManualDescription,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: cs.onTertiaryContainer
-                                      .withValues(alpha: 0.82),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile.adaptive(
-                    secondary: const Icon(Icons.settings_suggest_rounded),
-                    title: Text(context.l10n.useSystemLanguageTitle),
-                    subtitle: Text(
-                      usingSystemLanguage
-                          ? context.l10n.useSystemLanguageEnabled(
-                              _getLanguageName(context, activeLocale))
-                          : context.l10n.useSystemLanguageDisabled,
-                    ),
-                    value: usingSystemLanguage,
-                    onChanged: (value) =>
-                        _setFollowSystemLanguage(context, value),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.manage_search_rounded),
-                    enabled: !usingSystemLanguage,
-                    title: Text(context.l10n.chooseAppLanguage),
-                    subtitle: Text(
-                      usingSystemLanguage
-                          ? context.l10n.languagePickerDisabledHint
-                          : _getLanguageName(context, effectiveLocale),
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: usingSystemLanguage
-                        ? null
-                        : () => _openLanguagePicker(context),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color: cs.outlineVariant.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.info_outline_rounded,
-                            size: 16, color: cs.primary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            context.l10n.localizationHint,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }
