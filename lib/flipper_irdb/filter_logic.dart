@@ -124,10 +124,12 @@ class SignalListGroup {
 }
 
 /// Builds the List screen's Device Type -> Brand row groups from an
-/// already-filtered file set. Brands are numbered "Option N" using their
-/// position among same-brand files *before* skipping ones with neither a
-/// power/off nor a mute signal, so a file's label stays stable regardless of
-/// what else in that brand happens to qualify; a brand with only one file
+/// already-filtered file set, skipping any file with neither a power/off nor
+/// a mute signal (nothing to test), then de-duping rows that share a Device
+/// Type, Brand, Power signal, and Mute signal (compared by what they
+/// actually transmit, via `dedupeKey` — not by file name), keeping the
+/// first survivor in file-name order. Remaining same-brand rows are then
+/// numbered "Option N" by that same order; a brand left with only one row
 /// gets no option label at all. Device types and brands are both sorted
 /// alphabetically for a stable, predictable order.
 List<SignalListGroup> buildSignalListGroups(List<FlipperIrFile> filteredFiles) {
@@ -146,17 +148,34 @@ List<SignalListGroup> buildSignalListGroups(List<FlipperIrFile> filteredFiles) {
     final rows = <SignalListRow>[];
     for (final brand in byBrand.keys.toList()..sort()) {
       final files = byBrand[brand]!..sort((a, b) => a.fileName.compareTo(b.fileName));
-      final multiple = files.length > 1;
-      for (var i = 0; i < files.length; i++) {
-        final power = powerOrOffSignalFor(files[i]);
-        final mute = muteSignalFor(files[i]);
+
+      final seenKeys = <(String?, String?)>{};
+      final survivors = <SignalListRow>[];
+      for (final file in files) {
+        final power = powerOrOffSignalFor(file);
+        final mute = muteSignalFor(file);
         if (power == null && mute == null) continue;
-        rows.add(SignalListRow(
-          file: files[i],
-          optionLabel: multiple ? 'Option ${i + 1}' : null,
+        final key = (power?.dedupeKey, mute?.dedupeKey);
+        if (!seenKeys.add(key)) continue;
+        survivors.add(SignalListRow(
+          file: file,
+          optionLabel: null, // filled in below once we know the final count
           powerSignal: power,
           muteSignal: mute,
         ));
+      }
+
+      final multiple = survivors.length > 1;
+      for (var i = 0; i < survivors.length; i++) {
+        final row = survivors[i];
+        rows.add(multiple
+            ? SignalListRow(
+                file: row.file,
+                optionLabel: 'Option ${i + 1}',
+                powerSignal: row.powerSignal,
+                muteSignal: row.muteSignal,
+              )
+            : row);
       }
     }
 
