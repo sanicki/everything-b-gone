@@ -660,9 +660,11 @@ class _CycleControl extends StatelessWidget {
       // Nothing left of the current brand to skip past (the common case —
       // most brands survive dedup down to one signal) is exactly as
       // pointless as skipping all the way to the end of the run: either
-      // way, tapping "Next Brand" would do nothing, so show Stop instead.
+      // way, tapping "Skip remaining <brand>" would do nothing, so show
+      // Stop instead.
       final skipHasNoEffect =
           skipTarget == controller.attempted || skipTarget >= controller.total;
+      final skipBrand = currentSkipBrand(brands, controller.attempted) ?? '';
       final countText =
           showSignalCount ? '${controller.attempted}/${controller.total}' : null;
 
@@ -673,6 +675,7 @@ class _CycleControl extends StatelessWidget {
             background: cs.secondaryContainer,
             foreground: cs.onSecondaryContainer,
             skipHasNoEffect: skipHasNoEffect,
+            skipLabel: 'Skip remaining $skipBrand',
             countText: countText,
             onSkipBrand: () => controller.skipTo(skipTarget),
             onStop: controller.stop,
@@ -732,6 +735,7 @@ class _HoldToSkipOrStop extends StatefulWidget {
   final Color background;
   final Color foreground;
   final bool skipHasNoEffect;
+  final String skipLabel;
   final String? countText;
   final VoidCallback onSkipBrand;
   final VoidCallback onStop;
@@ -741,6 +745,7 @@ class _HoldToSkipOrStop extends StatefulWidget {
     required this.background,
     required this.foreground,
     required this.skipHasNoEffect,
+    required this.skipLabel,
     required this.countText,
     required this.onSkipBrand,
     required this.onStop,
@@ -798,9 +803,16 @@ class _HoldToSkipOrStopState extends State<_HoldToSkipOrStop>
       final children = <Widget>[
         Icon(icon, size: 40, color: widget.foreground),
         const SizedBox(height: 4),
-        Text(label,
-            style: TextStyle(
-                fontWeight: FontWeight.bold, fontSize: 16, color: widget.foreground)),
+        // Brand names vary a lot in length ("Sony" vs. "AmazonBasics"); the
+        // circle is a fixed 160px, so let this wrap up to two lines rather
+        // than overflow.
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: widget.foreground),
+        ),
       ];
       if (widget.countText != null) {
         children.add(Text(widget.countText!,
@@ -812,8 +824,17 @@ class _HoldToSkipOrStopState extends State<_HoldToSkipOrStop>
     final children = <Widget>[
       Icon(icon, size: 20, color: widget.foreground),
       const SizedBox(width: 8),
-      Text(label,
-          style: TextStyle(fontWeight: FontWeight.w600, color: widget.foreground)),
+      // Same variable-length concern as above; the pill has a fixed width,
+      // and a Row doesn't wrap text on its own, so this needs to be able to
+      // shrink and ellipsize instead of overflowing.
+      Flexible(
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontWeight: FontWeight.w600, color: widget.foreground),
+        ),
+      ),
     ];
     if (widget.countText != null) {
       children.add(const SizedBox(width: 6));
@@ -870,7 +891,7 @@ class _HoldToSkipOrStopState extends State<_HoldToSkipOrStop>
             children: [
               Opacity(
                 opacity: skipOpacity,
-                child: _face(icon: Icons.fast_forward_rounded, label: 'Next Brand'),
+                child: _face(icon: Icons.fast_forward_rounded, label: widget.skipLabel),
               ),
               Opacity(
                 opacity: stopOpacity,

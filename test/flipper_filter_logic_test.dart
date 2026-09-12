@@ -295,4 +295,21 @@ void main() {
       expect(nextBrandSkipTarget(brands, 3), 3);
     });
   });
+
+  group('currentSkipBrand', () {
+    test('is the just-sent brand once something has sent', () {
+      final brands = ['Sony', 'LG', 'Vizio'];
+      expect(currentSkipBrand(brands, 1), 'Sony');
+      expect(currentSkipBrand(brands, 2), 'LG');
+      expect(currentSkipBrand(brands, 3), 'Vizio');
+    });
+
+    test('is the upcoming brand when nothing has sent yet', () {
+      expect(currentSkipBrand(['Sony', 'LG'], 0), 'Sony');
+    });
+
+    test('is null for an empty list', () {
+      expect(currentSkipBrand(<String>[], 0), isNull);
+    });
+  });
 }
