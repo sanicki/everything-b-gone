@@ -1,134 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:everythingbgone/l10n/icon_picker_names.dart';
 import 'package:everythingbgone/l10n/l10n.dart';
-import 'package:everythingbgone/state/device_controls_prefs.dart';
-import 'package:everythingbgone/state/last_action_strip.dart';
-import 'package:everythingbgone/state/remotes_state.dart';
-import 'package:everythingbgone/utils/button_label.dart';
-import 'package:everythingbgone/utils/ir.dart';
-import 'package:everythingbgone/utils/remote.dart';
 
-class DeviceControlsScreen extends StatefulWidget {
+/// Android Device Controls now exposes exactly two fixed controls — Power
+/// and Mute — that fire the app's kill-switch cycle directly from the
+/// lock screen / power menu's Device Controls panel. There is no more
+/// per-slot "pick a remote+button" binding, so this screen is just
+/// instructions rather than a configuration UI.
+class DeviceControlsScreen extends StatelessWidget {
   const DeviceControlsScreen({super.key});
-
-  @override
-  State<DeviceControlsScreen> createState() => _DeviceControlsScreenState();
-}
-
-class _DeviceControlsScreenState extends State<DeviceControlsScreen> {
-  List<DeviceControlFavorite> _items = <DeviceControlFavorite>[];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final items = await DeviceControlsPrefs.load();
-    if (remotes.isEmpty) {
-      try {
-        remotes = await readRemotes();
-      } catch (_) {}
-    }
-    if (!mounted) return;
-    setState(() {
-      _items = items;
-      _loading = false;
-    });
-  }
-
-  String _displayTitle(DeviceControlFavorite fav) {
-    for (final r in remotes) {
-      for (final b in r.buttons) {
-        if (b.id == fav.buttonId) {
-          return displayButtonLabel(
-            b,
-            fallback: context.l10n.unnamedButton,
-            iconFallback: context.l10n.iconFallback,
-            iconNameLocalizer: (name) =>
-                localizedIconPickerName(context.l10n, name),
-          );
-        }
-      }
-    }
-    if (fav.title.trim().isNotEmpty) return fav.title.trim();
-    return context.l10n.unnamedButton;
-  }
-
-  Future<void> _remove(DeviceControlFavorite fav) async {
-    final removedIndex = _items.indexWhere((e) => e.buttonId == fav.buttonId);
-    await DeviceControlsPrefs.remove(fav.buttonId);
-    if (!mounted) return;
-    setState(() {
-      _items.removeWhere((e) => e.buttonId == fav.buttonId);
-    });
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(context.l10n.removedNamed(_displayTitle(fav))),
-        action: SnackBarAction(
-          label: context.l10n.undo,
-          onPressed: () async {
-            if (!mounted) return;
-            await DeviceControlsPrefs.add(fav);
-            if (!mounted) return;
-            setState(() {
-              final restoreAt = removedIndex < 0
-                  ? _items.length
-                  : removedIndex.clamp(0, _items.length);
-              _items.insert(restoreAt, fav);
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sendTest(DeviceControlFavorite fav) async {
-    IRButton? found;
-    if (remotes.isEmpty) {
-      try {
-        remotes = await readRemotes();
-      } catch (_) {}
-    }
-    for (final r in remotes) {
-      for (final b in r.buttons) {
-        if (b.id == fav.buttonId) {
-          found = b;
-          break;
-        }
-      }
-      if (found != null) break;
-    }
-
-    if (found == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.buttonNotFoundInRemotes)),
-      );
-      return;
-    }
-
-    try {
-      await sendIR(found);
-      showLastActionForButton(
-        button: found,
-        title: _displayTitle(fav),
-        remoteName: fav.subtitle,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.testSendCompleted)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.testSendFailed(e.toString()))),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,53 +16,59 @@ class _DeviceControlsScreenState extends State<DeviceControlsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.deviceControlsTitle)),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _items.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Text(context.l10n.noFavoritesYet,
-                          style: theme.textTheme.titleLarge),
-                      const SizedBox(height: 6),
-                      Text(
-                        context.l10n.deviceControlsEmptyHint,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: cs.onSurfaceVariant),
+                      Icon(Icons.settings_remote_rounded, color: cs.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          context.l10n.deviceControlsTitle,
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
                       ),
                     ],
                   ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _items.length,
-                  separatorBuilder: (_, __) => const Divider(height: 0),
-                  itemBuilder: (context, i) {
-                    final fav = _items[i];
-                    return ListTile(
-                      leading: const Icon(Icons.power_rounded),
-                      title: Text(_displayTitle(fav)),
-                      subtitle: Text(fav.subtitle),
-                      trailing: Wrap(
-                        spacing: 4,
-                        children: [
-                          IconButton(
-                            tooltip: context.l10n.sendTest,
-                            onPressed: () => _sendTest(fav),
-                            icon: const Icon(Icons.play_arrow_rounded),
-                          ),
-                          IconButton(
-                            tooltip: context.l10n.remove,
-                            onPressed: () => _remove(fav),
-                            icon: Icon(Icons.delete_outline, color: cs.error),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.power_settings_new_rounded,
+                        color: cs.primary),
+                    title: const Text('Power'),
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading:
+                        Icon(Icons.volume_off_rounded, color: cs.primary),
+                    title: const Text('Mute'),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Both controls fire the same Power/Mute kill-switch '
+                    "cycle as the app's main buttons, transmitting every "
+                    'matching signal for your current Device Type / Brand '
+                    'filter. Add them from the pencil (edit controls) icon '
+                    "in Android's Device Controls panel — they don't need "
+                    'to be set up here.',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,7 +1,5 @@
 package com.example.everythingbgone
 
-import android.app.PendingIntent
-import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -37,8 +35,6 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import com.example.everythingbgone.audio.AudioCapturedIrPlayer
 import com.example.everythingbgone.audio.AudioIrTransmitter
-import com.example.everythingbgone.BaseQuickTileService
-import java.util.UUID
 
 class MainActivity : FlutterActivity() {
     private enum class TxType { INTERNAL, USB, AUDIO_1_LED, AUDIO_2_LED }
@@ -72,11 +68,7 @@ class MainActivity : FlutterActivity() {
     private var txEventSink: EventChannel.EventSink? = null
     private var lastEmittedSnapshot: String? = null
     private var controlChannel: MethodChannel? = null
-    private var pendingControlButtonId: String? = null
-    private var quickTileChannel: MethodChannel? = null
-    private var pendingQuickTileChooserKey: String? = null
-    private var homeWidgetChannel: MethodChannel? = null
-    private var pendingHomeWidgetConfigureId: Int? = null
+    private var pendingControlAction: String? = null
     private var shortcutsChannel: MethodChannel? = null
     private var pendingShortcutAction: String? = null
 
@@ -404,8 +396,6 @@ class MainActivity : FlutterActivity() {
         private const val CHANNEL = "com.example.everythingbgone/irtransmitter"
         private const val EVENT_CHANNEL = "com.example.everythingbgone/irtransmitter_events"
         private const val CONTROL_CHANNEL = "com.example.everythingbgone/irtransmitter_controls"
-        private const val QUICK_TILE_CHANNEL = "com.example.everythingbgone/irtransmitter_quick_tile"
-        private const val HOME_WIDGET_CHANNEL = "com.example.everythingbgone/irtransmitter_home_widget"
         private const val SHORTCUTS_CHANNEL = "com.example.everythingbgone/app_shortcuts"
         private const val EXTRA_SHORTCUT_ACTION = "com.example.everythingbgone.SHORTCUT_ACTION"
         private const val DEFAULT_HEX_FREQUENCY = 38000
@@ -486,29 +476,9 @@ class MainActivity : FlutterActivity() {
             }
 
         controlChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CONTROL_CHANNEL)
-        pendingControlButtonId?.let { id ->
-            pendingControlButtonId = null
-            dispatchControlButton(id)
-        }
-
-        quickTileChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, QUICK_TILE_CHANNEL)
-        pendingQuickTileChooserKey?.let { key ->
-            pendingQuickTileChooserKey = null
-            dispatchQuickTileChooser(key)
-        }
-
-        homeWidgetChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, HOME_WIDGET_CHANNEL)
-        homeWidgetChannel?.setMethodCallHandler { call, result ->
-            when (call.method) {
-                "isPinSupported" -> handleIsWidgetPinSupported(result)
-                "pinButtonWidget" -> handlePinButtonWidget(call, result)
-                "saveWidgetMapping" -> handleSaveWidgetMapping(call, result)
-                else -> result.notImplemented()
-            }
-        }
-        pendingHomeWidgetConfigureId?.let { id ->
-            pendingHomeWidgetConfigureId = null
-            dispatchHomeWidgetConfigure(id)
+        pendingControlAction?.let { action ->
+            pendingControlAction = null
+            dispatchControlAction(action)
         }
 
         shortcutsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SHORTCUTS_CHANNEL)
@@ -549,69 +519,6 @@ class MainActivity : FlutterActivity() {
             ?: emptyList()
 
         shortcutManager.dynamicShortcuts = shortcuts
-        result.success(true)
-    }
-
-    private fun handleIsWidgetPinSupported(result: MethodChannel.Result) {
-        if (Build.VERSION.SDK_INT < 26) {
-            result.success(false)
-            return
-        }
-        val manager = AppWidgetManager.getInstance(applicationContext)
-        result.success(manager.isRequestPinAppWidgetSupported)
-    }
-
-    private fun handlePinButtonWidget(call: MethodCall, result: MethodChannel.Result) {
-        if (Build.VERSION.SDK_INT < 26) {
-            result.success(false)
-            return
-        }
-        val mapping = IrButtonWidgetMapping.fromMap(call.arguments as? Map<*, *>)
-        if (mapping == null) {
-            result.error("BAD_WIDGET_MAPPING", "Widget mapping is missing frequency or pattern data.", null)
-            return
-        }
-        val manager = AppWidgetManager.getInstance(applicationContext)
-        if (!manager.isRequestPinAppWidgetSupported) {
-            result.success(false)
-            return
-        }
-        val token = UUID.randomUUID().toString()
-        IrButtonWidgetStore.savePending(applicationContext, token, mapping)
-        val success = PendingIntent.getBroadcast(
-            applicationContext,
-            token.hashCode(),
-            Intent(applicationContext, IrButtonWidgetPinnedReceiver::class.java).apply {
-                putExtra(IrButtonWidgetPinnedReceiver.EXTRA_PENDING_TOKEN, token)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val ok = manager.requestPinAppWidget(
-            ComponentName(applicationContext, IrButtonWidgetProvider::class.java),
-            null,
-            success,
-        )
-        result.success(ok)
-    }
-
-    private fun handleSaveWidgetMapping(call: MethodCall, result: MethodChannel.Result) {
-        val args = call.arguments as? Map<*, *>
-        val appWidgetId = when (val raw = args?.get("appWidgetId")) {
-            is Number -> raw.toInt()
-            is String -> raw.toIntOrNull() ?: AppWidgetManager.INVALID_APPWIDGET_ID
-            else -> AppWidgetManager.INVALID_APPWIDGET_ID
-        }
-        val mapping = IrButtonWidgetMapping.fromMap(args?.get("mapping") as? Map<*, *>)
-        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID || mapping == null) {
-            result.error("BAD_WIDGET_MAPPING", "Widget id or mapping is invalid.", null)
-            return
-        }
-        IrButtonWidgetStore.saveMapping(applicationContext, appWidgetId, mapping)
-        IrButtonWidgetProvider.updateWidget(
-            applicationContext,
-            AppWidgetManager.getInstance(applicationContext),
-            appWidgetId,
-        )
         result.success(true)
     }
 
@@ -866,8 +773,6 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleControlIntent(intent)
-        handleQuickTileIntent(intent)
-        handleHomeWidgetIntent(intent)
         handleRuntimeShortcutIntent(intent)
     }
 
@@ -875,56 +780,29 @@ class MainActivity : FlutterActivity() {
         WindowCompat.enableEdgeToEdge(window)
         super.onCreate(savedInstanceState)
         handleControlIntent(intent)
-        handleQuickTileIntent(intent)
-        handleHomeWidgetIntent(intent)
         captureInitialShortcutIntent(intent)
     }
 
+    /**
+     * Cold-start-safe entry point for every headless trigger (Quick
+     * Settings tiles, Android Device Controls, the home-screen widget):
+     * they all launch this activity with a fixed "power"/"mute" action
+     * extra. If the Flutter engine isn't up yet, the action is queued in
+     * [pendingControlAction] and flushed once `configureFlutterEngine`
+     * wires up [controlChannel].
+     */
     private fun handleControlIntent(intent: Intent?) {
-        val id = intent?.getStringExtra(DeviceControlsService.EXTRA_CONTROL_BUTTON_ID) ?: return
-        dispatchControlButton(id)
+        val action = intent?.getStringExtra(DeviceControlsService.EXTRA_CONTROL_ACTION) ?: return
+        dispatchControlAction(action)
     }
 
-    private fun dispatchControlButton(buttonId: String) {
+    private fun dispatchControlAction(action: String) {
         val ch = controlChannel
         if (ch == null) {
-            pendingControlButtonId = buttonId
+            pendingControlAction = action
             return
         }
-        ch.invokeMethod("sendButton", mapOf("buttonId" to buttonId))
-    }
-
-    private fun handleQuickTileIntent(intent: Intent?) {
-        val key = intent?.getStringExtra(BaseQuickTileService.EXTRA_TILE_KEY) ?: return
-        if (key.isBlank()) return
-        dispatchQuickTileChooser(key)
-    }
-
-    private fun dispatchQuickTileChooser(tileKey: String) {
-        val ch = quickTileChannel
-        if (ch == null) {
-            pendingQuickTileChooserKey = tileKey
-            return
-        }
-        ch.invokeMethod("openChooser", mapOf("tileKey" to tileKey))
-    }
-
-    private fun handleHomeWidgetIntent(intent: Intent?) {
-        val id = intent?.getIntExtra(
-            IrButtonWidgetProvider.EXTRA_CONFIGURE_WIDGET_ID,
-            AppWidgetManager.INVALID_APPWIDGET_ID,
-        ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
-        if (id == AppWidgetManager.INVALID_APPWIDGET_ID) return
-        dispatchHomeWidgetConfigure(id)
-    }
-
-    private fun dispatchHomeWidgetConfigure(appWidgetId: Int) {
-        val ch = homeWidgetChannel
-        if (ch == null) {
-            pendingHomeWidgetConfigureId = appWidgetId
-            return
-        }
-        ch.invokeMethod("configureWidget", mapOf("appWidgetId" to appWidgetId))
+        ch.invokeMethod("fireAction", mapOf("action" to action))
     }
 
     private fun captureInitialShortcutIntent(intent: Intent?) {
@@ -958,7 +836,6 @@ class MainActivity : FlutterActivity() {
         } catch (_: Throwable) {
         }
         txEventSink = null
-        homeWidgetChannel = null
         usbTransmitter?.closeSafely()
         usbTransmitter = null
         audio1Tx.stop()

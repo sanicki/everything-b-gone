@@ -14,15 +14,12 @@ import 'package:everythingbgone/state/remote_display_prefs.dart';
 import 'package:everythingbgone/state/startup_prefs.dart';
 import 'package:everythingbgone/state/transmitter_prefs.dart';
 import 'package:everythingbgone/state/remotes_state.dart';
-import 'package:everythingbgone/utils/ir.dart';
+import 'package:everythingbgone/flipper_irdb/kill_switch_action.dart';
 import 'package:flutter/services.dart';
 import 'package:everythingbgone/l10n/app_localizations.dart';
 import 'package:everythingbgone/l10n/l10n.dart';
 import 'package:everythingbgone/utils/remote.dart';
 import 'package:everythingbgone/widgets/home_shell.dart';
-import 'package:everythingbgone/widgets/quick_tile_chooser.dart';
-import 'package:everythingbgone/state/quick_settings_prefs.dart';
-import 'package:everythingbgone/state/home_button_widget_prefs.dart';
 import 'package:media_store_plus/media_store_plus.dart';
 
 Future<void> main() async {
@@ -62,169 +59,42 @@ Future<void> main() async {
 
 final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
+/// Single channel every headless trigger (Quick Settings tiles, Android
+/// Device Controls, the home-screen widget) dispatches through. The
+/// native side (see MainActivity.kt's `dispatchControlAction`) launches
+/// the app — possibly cold, possibly with the screen off — and forwards a
+/// fixed "power"/"mute" action string here once the Flutter engine is
+/// ready; there is nothing left to look up since there are no more saved
+/// remotes, so this just fires the kill-switch cycle directly.
 const MethodChannel _controlChannel =
     MethodChannel('com.example.everythingbgone/irtransmitter_controls');
-const MethodChannel _quickTileChannel =
-    MethodChannel('com.example.everythingbgone/irtransmitter_quick_tile');
-const MethodChannel _homeWidgetChannel =
-    MethodChannel('com.example.everythingbgone/irtransmitter_home_widget');
-String? _pendingQuickTileKey;
-int? _pendingHomeWidgetId;
 
 void _initControlChannel() {
   _controlChannel.setMethodCallHandler((call) async {
-    if (call.method != 'sendButton') return;
+    if (call.method != 'fireAction') return;
     final args = call.arguments;
-    String? buttonId;
+    String? action;
     if (args is Map) {
-      final raw = args['buttonId'];
-      if (raw is String) buttonId = raw;
+      final raw = args['action'];
+      if (raw is String) action = raw;
     }
-    if (buttonId == null || buttonId.trim().isEmpty) return;
+    final killSwitchAction = _killSwitchActionFromString(action);
+    if (killSwitchAction == null) return;
     StartupPrefsController.instance.suppressAutoOpenForCurrentLaunch();
-    await _sendButtonById(buttonId.trim());
-  });
-
-  _quickTileChannel.setMethodCallHandler((call) async {
-    if (call.method != 'openChooser') return;
-    final args = call.arguments;
-    String? key;
-    if (args is Map) {
-      final raw = args['tileKey'];
-      if (raw is String) key = raw;
-    }
-    StartupPrefsController.instance.suppressAutoOpenForCurrentLaunch();
-    await _openQuickTileChooser(key);
-  });
-
-  _homeWidgetChannel.setMethodCallHandler((call) async {
-    if (call.method != 'configureWidget') return;
-    final args = call.arguments;
-    int? id;
-    if (args is Map) {
-      final raw = args['appWidgetId'];
-      if (raw is int) id = raw;
-      if (raw is String) id = int.tryParse(raw);
-    }
-    if (id == null || id <= 0) return;
-    StartupPrefsController.instance.suppressAutoOpenForCurrentLaunch();
-    await _configureHomeButtonWidget(id);
-  });
-}
-
-Future<void> _sendButtonById(String buttonId) async {
-  IRButton? found;
-  Remote? remoteFound;
-
-  if (remotes.isEmpty) {
     try {
-      remotes = await readRemotes();
-    } catch (_) {}
-  }
-
-  for (final r in remotes) {
-    for (final b in r.buttons) {
-      if (b.id == buttonId) {
-        found = b;
-        remoteFound = r;
-        break;
-      }
+      await fireKillSwitchAction(killSwitchAction);
+    } catch (e, st) {
+      debugPrint('Headless kill-switch action failed: $e\n$st');
     }
-    if (found != null) break;
-  }
-
-  if (found == null) return;
-
-  try {
-    await sendIR(found);
-    debugPrint(
-        'Device control sent: ${remoteFound?.name ?? 'Remote'} / ${found.id}');
-  } catch (e, st) {
-    debugPrint('Device control send failed: $e\n$st');
-  }
+  });
 }
 
-Future<void> _openQuickTileChooser(String? tileKey) async {
-  final ctx = _navKey.currentContext;
-  if (ctx == null) {
-    if (_pendingQuickTileKey != null) return;
-    _pendingQuickTileKey = tileKey;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final key = _pendingQuickTileKey;
-      _pendingQuickTileKey = null;
-      final ctx2 = _navKey.currentContext;
-      if (ctx2 != null) await _openQuickTileChooser(key);
-    });
-    return;
-  }
-  final pick = await pickButtonForTile(ctx, tileKey: tileKey);
-  if (!ctx.mounted) return;
-  if (pick == null) return;
-  final type = _tileTypeFromKey(tileKey);
-  if (type != null) {
-    final mapping = await buildQuickTileMapping(pick);
-    if (!ctx.mounted) return;
-    if (mapping != null) {
-      await QuickSettingsPrefs.saveMapping(type, mapping);
-    }
-  }
-  if (!ctx.mounted) return;
-  await sendButtonPick(ctx, pick);
-}
-
-Future<void> _configureHomeButtonWidget(int appWidgetId) async {
-  final ctx = _navKey.currentContext;
-  if (ctx == null) {
-    _pendingHomeWidgetId = appWidgetId;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final id = _pendingHomeWidgetId;
-      _pendingHomeWidgetId = null;
-      if (id != null) await _configureHomeButtonWidget(id);
-    });
-    return;
-  }
-  final pick = await pickButtonForTile(ctx);
-  if (!ctx.mounted || pick == null) return;
-  try {
-    final mapping = await buildHomeButtonWidgetMapping(pick);
-    if (!ctx.mounted) return;
-    if (mapping == null) {
-      ScaffoldMessenger.of(ctx).showSnackBar(
-        const SnackBar(
-            content: Text('This button cannot be used as a widget.')),
-      );
-      return;
-    }
-    final ok = await HomeButtonWidgetPrefs.saveWidgetMapping(
-      appWidgetId: appWidgetId,
-      mapping: mapping,
-    );
-    if (!ctx.mounted) return;
-    ScaffoldMessenger.of(ctx).showSnackBar(
-      SnackBar(
-        content: Text(ok
-            ? 'Home widget configured.'
-            : 'Home widget could not be configured.'),
-      ),
-    );
-  } catch (e) {
-    if (!ctx.mounted) return;
-    ScaffoldMessenger.of(ctx).showSnackBar(
-      SnackBar(content: Text('Home widget setup failed: $e')),
-    );
-  }
-}
-
-QuickTileType? _tileTypeFromKey(String? key) {
-  switch ((key ?? '').trim()) {
+KillSwitchAction? _killSwitchActionFromString(String? raw) {
+  switch ((raw ?? '').trim()) {
     case 'power':
-      return QuickTileType.power;
+      return KillSwitchAction.power;
     case 'mute':
-      return QuickTileType.mute;
-    case 'volumeUp':
-      return QuickTileType.volumeUp;
-    case 'volumeDown':
-      return QuickTileType.volumeDown;
+      return KillSwitchAction.mute;
     default:
       return null;
   }

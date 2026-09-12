@@ -15,7 +15,6 @@ import 'package:everythingbgone/state/remotes_state.dart';
 import 'package:everythingbgone/state/startup_prefs.dart';
 import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
 import 'package:everythingbgone/utils/remote.dart';
-import 'package:everythingbgone/utils/remotes_io.dart';
 import 'package:everythingbgone/widgets/about_screen.dart';
 import 'package:everythingbgone/widgets/settings/widgets/donation_sheet.dart';
 import 'package:everythingbgone/widgets/settings/widgets/section_card.dart';
@@ -143,64 +142,6 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     ).then((v) => v ?? false);
-  }
-
-  Future<void> _doImport(BuildContext context) async {
-    final result = await importRemotesFromPicker(context, current: remotes);
-    if (result == null) return;
-
-    final isFailure = result.message.toLowerCase().contains('failed') ||
-        result.message.toLowerCase().contains('unsupported') ||
-        result.message.toLowerCase().contains('invalid');
-
-    if (result.remotes.isEmpty && isFailure) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(result.message)));
-      return;
-    }
-
-    remotes = result.remotes;
-    await writeRemotelist(remotes);
-    remotes = await readRemotes();
-    notifyRemotesChanged();
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(result.message)));
-  }
-
-  Future<void> _doBulkImportFolder(BuildContext context) async {
-    final result =
-        await importRemotesFromFolderPicker(context, current: remotes);
-    if (result == null) return;
-
-    final isFailure = result.message.toLowerCase().contains('failed') ||
-        result.message.toLowerCase().contains('unsupported') ||
-        result.message.toLowerCase().contains('invalid');
-
-    if (result.remotes.isEmpty && isFailure) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(result.message)));
-      return;
-    }
-
-    remotes = result.remotes;
-    await writeRemotelist(remotes);
-    remotes = await readRemotes();
-    notifyRemotesChanged();
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(result.message)));
-  }
-
-  Future<void> _doExport(BuildContext context) async {
-    await exportRemotesToDownloads(
-      context,
-      remotes: remotes,
-    );
   }
 
   Future<void> _restoreDemoRemote(BuildContext context) async {
@@ -1163,32 +1104,11 @@ class SettingsScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SectionCard(
-        title: context.l10n.backupTitle,
-        subtitle: context.l10n.backupSubtitle,
-        leading: Icon(Icons.storage_rounded, color: cs.primary),
+        title: 'Reset',
+        subtitle: 'Restore or clear local demo data',
+        leading: Icon(Icons.restore_rounded, color: cs.primary),
         child: Column(
           children: [
-            ListTile(
-              leading: const Icon(Icons.file_upload_outlined),
-              title: Text(context.l10n.importBackup),
-              subtitle: Text(context.l10n.importBackupSubtitle),
-              onTap: () => _doImport(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.drive_folder_upload_outlined),
-              title: Text(context.l10n.bulkImportFolder),
-              subtitle: Text(context.l10n.bulkImportFolderSubtitle),
-              onTap: () => _doBulkImportFolder(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.file_download_outlined),
-              title: Text(context.l10n.exportBackup),
-              subtitle: Text(context.l10n.exportBackupSubtitle),
-              onTap: () => _doExport(context),
-            ),
-            const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.restore_rounded),
               title: Text(context.l10n.restoreDemoRemotes),
@@ -1203,13 +1123,6 @@ class SettingsScreen extends StatelessWidget {
                   style: TextStyle(color: theme.colorScheme.error)),
               subtitle: Text(context.l10n.deleteAllRemotesSubtitle),
               onTap: () => _deleteAllRemotes(context),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Text(
-                context.l10n.backupTip,
-                style: TextStyle(color: cs.onSurfaceVariant),
-              ),
             ),
           ],
         ),
