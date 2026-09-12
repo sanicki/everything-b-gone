@@ -10,22 +10,17 @@ import 'package:everythingbgone/state/haptics.dart';
 import 'package:everythingbgone/state/home_surface_prefs.dart';
 import 'package:everythingbgone/state/app_theme.dart';
 import 'package:everythingbgone/state/dynamic_color.dart';
-import 'package:everythingbgone/state/macros_state.dart';
 import 'package:everythingbgone/state/remote_display_prefs.dart';
 import 'package:everythingbgone/state/remotes_state.dart';
 import 'package:everythingbgone/state/startup_prefs.dart';
 import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
-import 'package:everythingbgone/utils/macros_io.dart';
 import 'package:everythingbgone/utils/remote.dart';
 import 'package:everythingbgone/utils/remotes_io.dart';
 import 'package:everythingbgone/widgets/about_screen.dart';
 import 'package:everythingbgone/widgets/settings/widgets/donation_sheet.dart';
 import 'package:everythingbgone/widgets/settings/widgets/section_card.dart';
 import 'package:everythingbgone/widgets/settings/widgets/support_pill.dart';
-import 'package:everythingbgone/widgets/universal_power_screen.dart';
 import 'package:everythingbgone/widgets/device_controls_screen.dart';
-import 'package:everythingbgone/widgets/github_store_screen.dart';
-import 'package:everythingbgone/widgets/learning_mode_screen.dart';
 import 'package:everythingbgone/widgets/quick_settings_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -170,12 +165,6 @@ class SettingsScreen extends StatelessWidget {
     remotes = await readRemotes();
     notifyRemotesChanged();
 
-    if (result.macros != null) {
-      await writeMacrosList(result.macros!);
-      final freshMacros = await readMacros();
-      setMacros(freshMacros);
-    }
-
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(result.message)));
@@ -211,7 +200,6 @@ class SettingsScreen extends StatelessWidget {
     await exportRemotesToDownloads(
       context,
       remotes: remotes,
-      macros: macros,
     );
   }
 
@@ -489,17 +477,11 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 10),
           _buildIrTransmitterSection(context, cs),
           const SizedBox(height: 10),
-          _buildLearningSection(context, cs),
-          const SizedBox(height: 10),
-          _buildGitHubStoreSection(context, cs),
-          const SizedBox(height: 10),
           _buildRemotesSection(context),
           const SizedBox(height: 10),
           _buildDeviceControlsSection(context),
           const SizedBox(height: 10),
           _buildQuickSettingsSection(context),
-          const SizedBox(height: 10),
-          _buildTvKillSection(context),
           const SizedBox(height: 10),
           _buildAboutSection(context),
           const SizedBox(height: 18),
@@ -769,71 +751,6 @@ class SettingsScreen extends StatelessWidget {
           background: cs.primaryContainer,
         ),
         child: const _IrTransmitterCard(),
-      ),
-    );
-  }
-
-  Widget _buildLearningSection(BuildContext context, ColorScheme cs) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SectionCard(
-        title: context.l10n.learningModeEntryTitle,
-        subtitle: context.l10n.learningModeEntrySubtitle,
-        leading: Icon(Icons.sensors_rounded, color: cs.primary),
-        titleSuffix: _buildSignalBadge(
-          context,
-          label: 'RX',
-          foreground: cs.secondary,
-          background: cs.secondaryContainer,
-        ),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.sensors_rounded),
-              title: Text(context.l10n.learningModeEntryTitle),
-              subtitle: Text(context.l10n.learningModeEntrySubtitle),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const LearningModeScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGitHubStoreSection(BuildContext context, ColorScheme cs) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SectionCard(
-        title: 'GitHub Store',
-        subtitle:
-            'Browse GitHub repositories and import supported IR files directly.',
-        leading: Icon(Icons.storefront_outlined, color: cs.primary),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.storefront_outlined),
-              title: const Text('Open GitHub Store'),
-              subtitle: const Text(
-                'Preview compatible files, save favorite sources, and import into remotes.',
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const GitHubStoreScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1489,35 +1406,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTvKillSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SectionCard(
-        title: context.l10n.tvKillTitle,
-        subtitle: context.l10n.tvKillSubtitle,
-        leading: Icon(Icons.power_settings_new_rounded, color: cs.primary),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.flash_on_rounded),
-              title: Text(context.l10n.openTvKill),
-              subtitle: Text(context.l10n.openTvKillSubtitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (_) => const UniversalPowerScreen()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _ThemeOptionCard extends StatelessWidget {

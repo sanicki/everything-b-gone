@@ -14,13 +14,11 @@ import 'package:everythingbgone/state/remote_display_prefs.dart';
 import 'package:everythingbgone/state/startup_prefs.dart';
 import 'package:everythingbgone/state/transmitter_prefs.dart';
 import 'package:everythingbgone/state/remotes_state.dart';
-import 'package:everythingbgone/state/macros_state.dart';
 import 'package:everythingbgone/utils/ir.dart';
 import 'package:flutter/services.dart';
 import 'package:everythingbgone/l10n/app_localizations.dart';
 import 'package:everythingbgone/l10n/l10n.dart';
 import 'package:everythingbgone/utils/remote.dart';
-import 'package:everythingbgone/utils/macros_io.dart';
 import 'package:everythingbgone/widgets/home_shell.dart';
 import 'package:everythingbgone/widgets/quick_tile_chooser.dart';
 import 'package:everythingbgone/state/quick_settings_prefs.dart';
@@ -334,13 +332,6 @@ class _BootstrapScreenState extends State<_BootstrapScreen> {
           writeDefaultRemotes(demoRemoteName: bootstrapL10n.demoRemoteName);
     }
     notifyRemotesChanged();
-    macros = await readMacros().timeout(
-      const Duration(seconds: 8),
-      onTimeout: () {
-        throw TimeoutException('readMacros() timed out');
-      },
-    );
-    notifyMacrosChanged();
     AppShortcutController.instance.markBootstrapReady();
   }
 

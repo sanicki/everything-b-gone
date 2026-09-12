@@ -1,25 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:everythingbgone/ir/protocols/pioneer.dart';
-import 'package:everythingbgone/ir_finder/ir_finder_models.dart';
-import 'package:everythingbgone/utils/db_button_import.dart';
 
 void main() {
-  test('Pioneer database import preserves both parts of a mixed command', () {
-    final button = buildButtonFromDbRow(const IrDbKeyCandidate(
-      id: 1,
-      protocol: 'Pioneer',
-      hexcode: 'A57AA5E0',
-    ));
-
-    expect(button, isNotNull);
-    expect(button!.protocolParams, <String, dynamic>{
-      'address': 'A5',
-      'command': '7A',
-      'secondaryAddress': 'A5',
-      'secondaryCommand': 'E0',
-    });
-  });
-
   test('Pioneer emits the optional second command as its second frame', () {
     const encoder = PioneerProtocolEncoder();
     final mixed = encoder.encode(<String, dynamic>{
