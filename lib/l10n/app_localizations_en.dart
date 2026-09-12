@@ -910,9 +910,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutSubtitle => 'App information and open-source details';
 
   @override
-  String aboutAppNameWithCreator(Object creator) {
-    return 'IR Blaster - $creator';
-  }
+  String get aboutAppNameWithCreator => 'Everything-B-Gone';
 
   @override
   String versionLabel(Object version) {

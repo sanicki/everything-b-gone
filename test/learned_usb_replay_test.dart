@@ -1,12 +1,12 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:irblaster_controller/utils/ir.dart';
-import 'package:irblaster_controller/utils/remote.dart';
+import 'package:everythingbgone/utils/ir.dart';
+import 'package:everythingbgone/utils/remote.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('org.nslabs/irtransmitter');
+  const channel = MethodChannel('com.example.everythingbgone/irtransmitter');
   final calls = <MethodCall>[];
 
   setUp(() {

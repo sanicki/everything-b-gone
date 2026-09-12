@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:irblaster_controller/config/build_flags.dart';
-import 'package:irblaster_controller/state/haptics.dart';
+import 'package:everythingbgone/config/build_flags.dart';
+import 'package:everythingbgone/state/haptics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -113,17 +113,8 @@ class _AboutScreenState extends State<AboutScreen> {
   }
 
   String _packageName() => _info?.packageName ?? '—';
-  String _appName() => (_info?.appName.trim().isNotEmpty ?? false) ? _info!.appName : 'IR Blaster';
-
-  List<_OtherApp> _otherApps() {
-    return const <_OtherApp>[
-      _OtherApp(name: 'IR Blaster', url: 'https://github.com/iodn/android-ir-blaster'),
-      _OtherApp(name: 'USBDevInfo', url: 'https://github.com/iodn/android-usb-device-info'),
-      _OtherApp(name: 'GadgetFS', url: 'https://github.com/iodn/gadgetfs'),
-      _OtherApp(name: 'TapDucky', url: 'https://github.com/iodn/tap-ducky'),
-      _OtherApp(name: 'HIDWiggle', url: 'https://github.com/iodn/hid-wiggle'),
-    ];
-  }
+  String _appName() =>
+      (_info?.appName.trim().isNotEmpty ?? false) ? _info!.appName : 'Everything-B-Gone';
 
   @override
   Widget build(BuildContext context) {
@@ -164,14 +155,6 @@ class _AboutScreenState extends State<AboutScreen> {
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: cs.onSurface.withOpacity(0.7),
                     fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'KaijinLab Inc.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurface.withOpacity(0.8),
-                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
@@ -224,7 +207,7 @@ class _AboutScreenState extends State<AboutScreen> {
           const SizedBox(height: 12),
           SectionCard(
             title: 'What this app is',
-            subtitle: 'Infrared control toolkit',
+            subtitle: 'An IR kill switch',
             leading: Icon(Icons.settings_remote_rounded, color: cs.primary),
             child: Padding(
               padding: const EdgeInsets.all(14),
@@ -232,7 +215,7 @@ class _AboutScreenState extends State<AboutScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'IR Blaster helps build and use custom IR remotes on Android: transmit with internal emitters, compatible USB IR dongles, or audio-to-IR LED adapters, and import signals from Flipper Zero .ir files. No accounts, no tracking, no ads.',
+                    'Everything-B-Gone blasts Power and Mute signals sourced from the Flipper-IRDB community database, transmitted with your device\'s internal IR emitter, a compatible USB IR dongle, or an audio-to-IR LED adapter. No accounts, no tracking, no ads.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: cs.onSurface.withOpacity(0.85),
                       height: 1.35,
@@ -244,11 +227,10 @@ class _AboutScreenState extends State<AboutScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      SupportPill(icon: Icons.settings_remote_rounded, label: 'Custom remotes'),
+                      SupportPill(icon: Icons.cloud_download_rounded, label: 'Flipper-IRDB sourced'),
                       SupportPill(icon: Icons.settings_input_antenna_rounded, label: 'Internal IR'),
                       SupportPill(icon: Icons.usb_rounded, label: 'USB dongles'),
                       SupportPill(icon: Icons.volume_up_rounded, label: 'Audio adapter'),
-                      SupportPill(icon: Icons.file_upload_outlined, label: 'Flipper .ir import'),
                     ],
                   ),
                 ],
@@ -273,27 +255,6 @@ class _AboutScreenState extends State<AboutScreen> {
                   _InfoRow(label: 'Build', value: mode),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SectionCard(
-            title: 'Other apps by KaijinLab',
-            subtitle: 'More security and hardware-adjacent tools',
-            leading: Icon(Icons.apps_rounded, color: cs.primary),
-            child: Column(
-              children: [
-                for (final a in _otherApps()) ...[
-                  ListTile(
-                    leading: const Icon(Icons.launch_rounded),
-                    title: Text(a.name),
-                    subtitle: const Text('Open GitHub repository'),
-                    trailing: const Icon(Icons.open_in_new_rounded),
-                    onTap: () => _launchExternal(context, a.url),
-                    onLongPress: () => _copy(context, a.url, 'Repository link copied'),
-                  ),
-                  if (a != _otherApps().last) const Divider(height: 1),
-                ],
-              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -342,7 +303,7 @@ class _AboutScreenState extends State<AboutScreen> {
           const SizedBox(height: 14),
           Center(
             child: Text(
-              '© $year KaijinLab • Open-source software',
+              '© $year • GPL-3.0 open-source software',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurface.withOpacity(0.55),
                 fontWeight: FontWeight.w700,
@@ -447,14 +408,4 @@ class _AppLogo extends StatelessWidget {
       child: child,
     );
   }
-}
-
-class _OtherApp {
-  final String name;
-  final String url;
-
-  const _OtherApp({
-    required this.name,
-    required this.url,
-  });
 }

@@ -1,30 +1,6 @@
 <!-- android/app/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.nslabs.ir_blaster">
-
-    <!-- Declare which external ACTION_* intents your app will use -->
-    <queries>
-        <!-- User-import: pick an existing IR file -->
-        <intent>
-            <action android:name="android.intent.action.OPEN_DOCUMENT" />
-            <category android:name="android.intent.category.OPENABLE" />
-            <data android:mimeType="*/*" />
-        </intent>
-
-        <!-- User-export: create/save an IR file -->
-        <intent>
-            <action android:name="android.intent.action.CREATE_DOCUMENT" />
-            <category android:name="android.intent.category.OPENABLE" />
-            <data android:mimeType="*/*" />
-        </intent>
-
-        <!-- Some pickers/providers use GET_CONTENT -->
-        <intent>
-            <action android:name="android.intent.action.GET_CONTENT" />
-            <category android:name="android.intent.category.OPENABLE" />
-            <data android:mimeType="*/*" />
-        </intent>
-    </queries>
+    package="com.example.everythingbgone">
 
     <!-- Hardware capabilities (optional) -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
@@ -34,19 +10,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.TRANSMIT_IR" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
-    <!-- Legacy storage permissions for Android 10 and below.
-         Android 11+ uses scoped storage / the system document picker. -->
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />
 
     <application
-        android:label="IR Blaster Remote"
+        android:label="Everything-B-Gone"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
@@ -93,7 +59,7 @@
             android:name=".UsbPermissionReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="org.nslabs.irblaster.USB_PERMISSION" />
+                <action android:name="com.example.everythingbgone.USB_PERMISSION" />
             </intent-filter>
         </receiver>
 
@@ -102,16 +68,12 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="org.nslabs.irblaster.widget.SEND_BUTTON" />
+                <action android:name="com.example.everythingbgone.widget.SEND_BUTTON" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/ir_button_widget_info" />
         </receiver>
-
-        <receiver
-            android:name=".IrButtonWidgetPinnedReceiver"
-            android:exported="false" />
 
         <service
             android:name=".DeviceControlsService"
@@ -138,23 +100,6 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
-        <service
-            android:name=".VolumeUpTileService"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-        <service
-            android:name=".VolumeDownTileService"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

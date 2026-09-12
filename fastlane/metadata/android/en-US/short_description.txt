@@ -1,1 +1,0 @@
-Another Universal IR remote: Hex/Raw, Flipper Zero, LIRC, IRPlus + Signal Tester

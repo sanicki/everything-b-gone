@@ -26,7 +26,7 @@ if (hasReleaseKeystore) {
 }
 
 android {
-    namespace "org.nslabs.ir_blaster"
+    namespace "com.example.everythingbgone"
     compileSdkVersion 36
     ndkVersion "28.2.13676358"
 
@@ -44,7 +44,8 @@ android {
     }
 
     defaultConfig {
-        applicationId "org.nslabs.ir_blaster"
+        // TODO: replace with a real reverse-domain application id before shipping.
+        applicationId "com.example.everythingbgone"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion 36
         versionCode flutterVersionCode.toInteger()
@@ -65,9 +66,10 @@ android {
 
     buildTypes {
         release {
-            if (hasReleaseKeystore) {
-                signingConfig signingConfigs.release
-            }
+            // Fall back to debug signing when no release keystore is configured, so
+            // `flutter build apk --release` always produces an installable APK. The
+            // release workflow labels this fallback clearly in its release notes.
+            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             minifyEnabled true
             shrinkResources true

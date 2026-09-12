@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:irblaster_controller/ir/ir_protocol_registry.dart';
-import 'package:irblaster_controller/utils/ir_transmitter_platform.dart';
+import 'package:everythingbgone/ir/ir_protocol_registry.dart';
+import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
 import 'remote.dart';
 
-const platform = MethodChannel('org.nslabs/irtransmitter');
+const platform = MethodChannel('com.example.everythingbgone/irtransmitter');
 
 const int kDefaultNecFrequencyHz = 38000;
 const int kMinIrFrequencyHz = 15000;

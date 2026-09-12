@@ -1,75 +1,31 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/config/build_flags.dart';
-import 'package:irblaster_controller/l10n/app_localizations.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/state/app_locale.dart';
-import 'package:irblaster_controller/state/orientation_pref.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/state/orientation_pref.dart';
 import 'package:flutter/services.dart';
-import 'package:irblaster_controller/state/haptics.dart';
-import 'package:irblaster_controller/state/home_surface_prefs.dart';
-import 'package:irblaster_controller/state/app_theme.dart';
-import 'package:irblaster_controller/state/dynamic_color.dart';
-import 'package:irblaster_controller/state/macros_state.dart';
-import 'package:irblaster_controller/state/remote_display_prefs.dart';
-import 'package:irblaster_controller/state/remotes_state.dart';
-import 'package:irblaster_controller/state/startup_prefs.dart';
-import 'package:irblaster_controller/utils/ir_transmitter_platform.dart';
-import 'package:irblaster_controller/utils/macros_io.dart';
-import 'package:irblaster_controller/utils/remote.dart';
-import 'package:irblaster_controller/utils/remotes_io.dart';
-import 'package:irblaster_controller/widgets/about_screen.dart';
-import 'package:irblaster_controller/widgets/settings/widgets/donation_sheet.dart';
-import 'package:irblaster_controller/widgets/settings/widgets/section_card.dart';
-import 'package:irblaster_controller/widgets/settings/widgets/support_pill.dart';
-import 'package:irblaster_controller/widgets/universal_power_screen.dart';
-import 'package:irblaster_controller/widgets/device_controls_screen.dart';
-import 'package:irblaster_controller/widgets/github_store_screen.dart';
-import 'package:irblaster_controller/widgets/learning_mode_screen.dart';
-import 'package:irblaster_controller/widgets/quick_settings_screen.dart';
+import 'package:everythingbgone/state/haptics.dart';
+import 'package:everythingbgone/state/home_surface_prefs.dart';
+import 'package:everythingbgone/state/app_theme.dart';
+import 'package:everythingbgone/state/dynamic_color.dart';
+import 'package:everythingbgone/state/remote_display_prefs.dart';
+import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
+import 'package:everythingbgone/widgets/about_screen.dart';
+import 'package:everythingbgone/widgets/settings/widgets/section_card.dart';
+import 'package:everythingbgone/widgets/device_controls_screen.dart';
+import 'package:everythingbgone/widgets/quick_settings_screen.dart';
+import 'package:everythingbgone/widgets/settings/widgets/flipper_data_card.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  static const String _repoUrl = 'https://github.com/iodn/android-ir-blaster';
+  static const String _repoUrl =
+      'https://github.com/sanicki/everything-b-gone';
   static const String _issuesUrl =
-      'https://github.com/iodn/android-ir-blaster/issues';
+      'https://github.com/sanicki/everything-b-gone/issues';
   static const String _licenseUrl =
-      'https://github.com/iodn/android-ir-blaster/blob/master/LICENSE';
-  static const String _companyUrl = 'https://neroswarm.com';
-  static const String _creatorName = 'KaijinLab Inc.';
-  static const String _liberapayUrl = 'https://liberapay.com/KaijinLab/donate';
-  static const String _btcAddress =
-      'bc1qtf79uecssueu4u4u86zct46vcs0vcd2cnmvw6f';
-  static const String _ethAddress =
-      '0xCaCc52Cd2D534D869a5C61dD3cAac57455f3c2fD';
-  static const Map<String, String> _languageNativeNames = <String, String>{
-    'en': 'English',
-    'fr': 'Français',
-    'es': 'Español',
-    'de': 'Deutsch',
-    'it': 'Italiano',
-    'pt': 'Português',
-    'pt_BR': 'Português (Brasil)',
-    'ja': '日本語',
-    'ko': '한국어',
-    'zh': '中文',
-    'ru': 'Русский',
-    'ar': 'العربية',
-    'ar_EG': 'العربية (مصر)',
-    'hi': 'हिन्दी',
-    'id': 'Bahasa Indonesia',
-    'ms': 'Bahasa Melayu',
-    'th': 'ไทย',
-    'tr': 'Türkçe',
-    'vi': 'Tiếng Việt',
-    'pl': 'Polski',
-    'fil': 'Filipino',
-    'uk': 'Українська',
-    'nl': 'Nederlands',
-  };
+      'https://github.com/sanicki/everything-b-gone/blob/main/LICENSE';
 
   Future<void> _launchUrl(BuildContext context, String url) async {
     try {
@@ -110,306 +66,10 @@ class SettingsScreen extends StatelessWidget {
     await Haptics.selectionClick();
   }
 
-  Future<bool> _confirmAction(
-    BuildContext context, {
-    required String title,
-    required String message,
-    required String confirmLabel,
-    IconData icon = Icons.warning_amber_rounded,
-    bool destructive = false,
-  }) async {
-    final theme = Theme.of(context);
-    return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: Icon(
-          icon,
-          color:
-              destructive ? theme.colorScheme.error : theme.colorScheme.primary,
-          size: 32,
-        ),
-        title: Text(title),
-        content: Text(message, style: theme.textTheme.bodyMedium),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(context.l10n.cancel),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: destructive
-                ? FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.errorContainer,
-                    foregroundColor: theme.colorScheme.onErrorContainer,
-                  )
-                : null,
-            child: Text(confirmLabel),
-          ),
-        ],
-      ),
-    ).then((v) => v ?? false);
-  }
-
-  Future<void> _doImport(BuildContext context) async {
-    final result = await importRemotesFromPicker(context, current: remotes);
-    if (result == null) return;
-
-    final isFailure = result.message.toLowerCase().contains('failed') ||
-        result.message.toLowerCase().contains('unsupported') ||
-        result.message.toLowerCase().contains('invalid');
-
-    if (result.remotes.isEmpty && isFailure) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(result.message)));
-      return;
-    }
-
-    remotes = result.remotes;
-    await writeRemotelist(remotes);
-    remotes = await readRemotes();
-    notifyRemotesChanged();
-
-    if (result.macros != null) {
-      await writeMacrosList(result.macros!);
-      final freshMacros = await readMacros();
-      setMacros(freshMacros);
-    }
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(result.message)));
-  }
-
-  Future<void> _doBulkImportFolder(BuildContext context) async {
-    final result =
-        await importRemotesFromFolderPicker(context, current: remotes);
-    if (result == null) return;
-
-    final isFailure = result.message.toLowerCase().contains('failed') ||
-        result.message.toLowerCase().contains('unsupported') ||
-        result.message.toLowerCase().contains('invalid');
-
-    if (result.remotes.isEmpty && isFailure) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(result.message)));
-      return;
-    }
-
-    remotes = result.remotes;
-    await writeRemotelist(remotes);
-    remotes = await readRemotes();
-    notifyRemotesChanged();
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(result.message)));
-  }
-
-  Future<void> _doExport(BuildContext context) async {
-    await exportRemotesToDownloads(
-      context,
-      remotes: remotes,
-      macros: macros,
-    );
-  }
-
-  Future<void> _restoreDemoRemote(BuildContext context) async {
-    final l10n = context.l10n;
-    final confirmed = await _confirmAction(
-      context,
-      title: l10n.settingsRestoreDemoTitle,
-      message: l10n.settingsRestoreDemoMessage,
-      confirmLabel: l10n.settingsRestoreDemoConfirm,
-      icon: Icons.restore_rounded,
-      destructive: true,
-    );
-    if (!confirmed) return;
-
-    remotes = writeDefaultRemotes(demoRemoteName: l10n.demoRemoteName);
-    await writeRemotelist(remotes);
-    notifyRemotesChanged();
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.settingsDemoRemotesRestored)));
-  }
-
-  Future<void> _deleteAllRemotes(BuildContext context) async {
-    final confirmed = await _confirmAction(
-      context,
-      title: context.l10n.settingsDeleteAllRemotesTitle,
-      message: context.l10n.settingsDeleteAllRemotesMessage,
-      confirmLabel: context.l10n.settingsDeleteAllConfirm,
-      icon: Icons.delete_forever,
-      destructive: true,
-    );
-    if (!confirmed) return;
-
-    remotes = <Remote>[];
-    await writeRemotelist(remotes);
-    notifyRemotesChanged();
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.settingsAllRemotesDeleted)));
-  }
-
-  void _openDonationSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (ctx) {
-        return FractionallySizedBox(
-          heightFactor: 0.92,
-          child: DonationSheet(
-            repoUrl: _repoUrl,
-            btcAddress: _btcAddress,
-            ethAddress: _ethAddress,
-            liberapayUrl: _liberapayUrl,
-            onCopy: (text, message) =>
-                _copyToClipboard(ctx, text: text, message: message),
-          ),
-        );
-      },
-    );
-  }
 
   Future<void> _changeTheme(BuildContext context, ThemeMode mode) async {
     await AppThemeController.instance.setMode(mode);
     await Haptics.selectionClick();
-  }
-
-  Future<void> _changeAppLanguage(BuildContext context, Locale? locale) async {
-    await AppLocaleController.instance.setOverride(locale);
-    await Haptics.selectionClick();
-  }
-
-  Future<void> _setFollowSystemLanguage(
-      BuildContext context, bool value) async {
-    if (value) {
-      await _changeAppLanguage(context, null);
-      return;
-    }
-    final activeLocale = AppLocaleController.instance.resolveActiveLocale(
-      AppLocalizations.supportedLocales.toList(),
-      Localizations.localeOf(context),
-    );
-    await _changeAppLanguage(context, activeLocale);
-  }
-
-  Future<void> _openLanguagePicker(BuildContext context) async {
-    final locales = AppLocalizations.supportedLocales.toList()
-      ..sort((a, b) =>
-          _getLanguageName(context, a).compareTo(_getLanguageName(context, b)));
-    Locale? selected = AppLocaleController.instance.overrideLocale ??
-        AppLocaleController.instance
-            .resolveActiveLocale(locales, Localizations.localeOf(context));
-    String query = '';
-
-    final picked = await showModalBottomSheet<Locale>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return StatefulBuilder(
-          builder: (ctx2, setModal) {
-            final filtered = locales.where((locale) {
-              final q = query.trim().toLowerCase();
-              if (q.isEmpty) return true;
-              final label = _getLanguageName(ctx2, locale).toLowerCase();
-              final code = locale.toLanguageTag().toLowerCase();
-              return label.contains(q) || code.contains(q);
-            }).toList(growable: false);
-
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 8,
-                bottom: 16 + MediaQuery.of(ctx2).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          context.l10n.chooseAppLanguage,
-                          style: theme.textTheme.titleLarge,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: context.l10n.close,
-                        onPressed: () => Navigator.of(ctx2).pop(),
-                        icon: const Icon(Icons.close_rounded),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    onChanged: (value) => setModal(() => query = value),
-                    decoration: InputDecoration(
-                      hintText: context.l10n.searchLanguages,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  if (filtered.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      child: Text(
-                        context.l10n.noLanguagesFound,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    )
-                  else
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const Divider(height: 0),
-                        itemBuilder: (ctx3, index) {
-                          final locale = filtered[index];
-                          final isSelected = selected == locale;
-                          return ListTile(
-                            leading: Icon(
-                              Icons.translate_rounded,
-                              color:
-                                  isSelected ? theme.colorScheme.primary : null,
-                            ),
-                            title: Text(_getLanguageName(ctx3, locale)),
-                            subtitle: Text(locale.toLanguageTag()),
-                            trailing: isSelected
-                                ? const Icon(Icons.check_rounded)
-                                : null,
-                            onTap: () => Navigator.of(ctx3).pop(locale),
-                          );
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    if (picked == null || !context.mounted) return;
-    await _changeAppLanguage(context, picked);
   }
 
   String _getThemeName(BuildContext context, ThemeMode mode) {
@@ -456,18 +116,6 @@ class SettingsScreen extends StatelessWidget {
     }
   }
 
-  String _getLanguageName(BuildContext context, Locale? locale) {
-    if (locale == null) return context.l10n.languageAuto;
-    final tag = locale.toLanguageTag().replaceAll('-', '_');
-    final exactName = _languageNativeNames[tag];
-    if (exactName != null) return exactName;
-    final languageName = _languageNativeNames[locale.languageCode] ??
-        locale.languageCode.toUpperCase();
-    final countryCode = locale.countryCode;
-    if (countryCode == null || countryCode.isEmpty) return languageName;
-    return '$languageName (${countryCode.toUpperCase()})';
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -477,128 +125,21 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         children: [
           const SizedBox(height: 10),
-          if (BuildFlags.showDonations) ...[
-            _buildSupportSection(context),
-            const SizedBox(height: 10),
-          ],
           _buildAppearanceSection(context),
-          const SizedBox(height: 10),
-          _buildLocalizationSection(context),
           const SizedBox(height: 10),
           _buildInteractionSection(context),
           const SizedBox(height: 10),
           _buildIrTransmitterSection(context, cs),
           const SizedBox(height: 10),
-          _buildLearningSection(context, cs),
-          const SizedBox(height: 10),
-          _buildGitHubStoreSection(context, cs),
-          const SizedBox(height: 10),
-          _buildRemotesSection(context),
+          _buildFlipperDataSection(context, cs),
           const SizedBox(height: 10),
           _buildDeviceControlsSection(context),
           const SizedBox(height: 10),
           _buildQuickSettingsSection(context),
           const SizedBox(height: 10),
-          _buildTvKillSection(context),
-          const SizedBox(height: 10),
           _buildAboutSection(context),
           const SizedBox(height: 18),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSupportSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SectionCard(
-        title: context.l10n.supportDevelopmentTitle,
-        subtitle: context.l10n.supportDevelopmentSubtitle,
-        leading: Icon(Icons.volunteer_activism_rounded, color: cs.primary),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      cs.secondaryContainer.withValues(alpha: 0.7),
-                      cs.secondaryContainer.withValues(alpha: 0.4),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                      color: cs.outlineVariant.withValues(alpha: 0.3)),
-                ),
-                child: Text(
-                  context.l10n.supportDevelopmentBody,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: cs.onSecondaryContainer,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () => _openDonationSheet(context),
-                      icon: const Icon(Icons.favorite_rounded),
-                      label: Text(context.l10n.donate),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _launchUrl(context, _repoUrl),
-                      onLongPress: () => _copyToClipboard(
-                        context,
-                        text: _repoUrl,
-                        message: context.l10n.repositoryLinkCopied,
-                      ),
-                      icon: const Icon(Icons.star_border_rounded),
-                      label: Text(context.l10n.starRepo),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  SupportPill(
-                      icon: Icons.lock_outline_rounded,
-                      label: context.l10n.supportPillLocalOnly),
-                  SupportPill(
-                      icon: Icons.shield_outlined,
-                      label: context.l10n.supportPillNoTracking),
-                  SupportPill(
-                      icon: Icons.memory_rounded,
-                      label: context.l10n.supportPillHardwareAware),
-                  SupportPill(
-                      icon: Icons.code_rounded,
-                      label: context.l10n.supportPillOpenSource),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -773,67 +314,14 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLearningSection(BuildContext context, ColorScheme cs) {
+  Widget _buildFlipperDataSection(BuildContext context, ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SectionCard(
-        title: context.l10n.learningModeEntryTitle,
-        subtitle: context.l10n.learningModeEntrySubtitle,
-        leading: Icon(Icons.sensors_rounded, color: cs.primary),
-        titleSuffix: _buildSignalBadge(
-          context,
-          label: 'RX',
-          foreground: cs.secondary,
-          background: cs.secondaryContainer,
-        ),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.sensors_rounded),
-              title: Text(context.l10n.learningModeEntryTitle),
-              subtitle: Text(context.l10n.learningModeEntrySubtitle),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const LearningModeScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGitHubStoreSection(BuildContext context, ColorScheme cs) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SectionCard(
-        title: 'GitHub Store',
-        subtitle:
-            'Browse GitHub repositories and import supported IR files directly.',
-        leading: Icon(Icons.storefront_outlined, color: cs.primary),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.storefront_outlined),
-              title: const Text('Open GitHub Store'),
-              subtitle: const Text(
-                'Preview compatible files, save favorite sources, and import into remotes.',
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const GitHubStoreScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+        title: 'Flipper-IRDB data',
+        subtitle: 'Manage the cached device signal database',
+        leading: Icon(Icons.cloud_download_rounded, color: cs.primary),
+        child: const FlipperDataCard(),
       ),
     );
   }
@@ -862,160 +350,9 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLocalizationSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: AnimatedBuilder(
-        animation: AppLocaleController.instance,
-        builder: (context, _) {
-          final localeOverride = AppLocaleController.instance.overrideLocale;
-          final usingSystemLanguage = localeOverride == null;
-          final activeLocale = AppLocaleController.instance.resolveActiveLocale(
-            AppLocalizations.supportedLocales.toList(),
-            Localizations.localeOf(context),
-          );
-          final effectiveLocale = localeOverride ?? activeLocale;
-
-          return SectionCard(
-            title: context.l10n.localizationTitle,
-            subtitle: context.l10n.localizationSubtitle,
-            leading: Icon(Icons.language_rounded, color: cs.primary),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          cs.tertiaryContainer.withValues(alpha: 0.55),
-                          cs.tertiaryContainer.withValues(alpha: 0.25),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                          color: cs.tertiary.withValues(alpha: 0.28)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: cs.tertiary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.translate_rounded,
-                            size: 20,
-                            color: cs.onTertiary,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                usingSystemLanguage
-                                    ? context.l10n.localizationAutoUsing(
-                                        _getLanguageName(
-                                            context, effectiveLocale))
-                                    : _getLanguageName(
-                                        context, effectiveLocale),
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: cs.onTertiaryContainer,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                usingSystemLanguage
-                                    ? context.l10n.localizationAutoDescription
-                                    : context
-                                        .l10n.localizationManualDescription,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: cs.onTertiaryContainer
-                                      .withValues(alpha: 0.82),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile.adaptive(
-                    secondary: const Icon(Icons.settings_suggest_rounded),
-                    title: Text(context.l10n.useSystemLanguageTitle),
-                    subtitle: Text(
-                      usingSystemLanguage
-                          ? context.l10n.useSystemLanguageEnabled(
-                              _getLanguageName(context, activeLocale))
-                          : context.l10n.useSystemLanguageDisabled,
-                    ),
-                    value: usingSystemLanguage,
-                    onChanged: (value) =>
-                        _setFollowSystemLanguage(context, value),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.manage_search_rounded),
-                    enabled: !usingSystemLanguage,
-                    title: Text(context.l10n.chooseAppLanguage),
-                    subtitle: Text(
-                      usingSystemLanguage
-                          ? context.l10n.languagePickerDisabledHint
-                          : _getLanguageName(context, effectiveLocale),
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: usingSystemLanguage
-                        ? null
-                        : () => _openLanguagePicker(context),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color: cs.outlineVariant.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.info_outline_rounded,
-                            size: 16, color: cs.primary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            context.l10n.localizationHint,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildInteractionSection(BuildContext context) {
     final orientationCtrl = RemoteOrientationController.instance;
     final displayCtrl = RemoteDisplayController.instance;
-    final startupCtrl = StartupPrefsController.instance;
     final cs = Theme.of(context).colorScheme;
     unawaited(HapticsController.instance.refreshDiagnostics(notify: false));
 
@@ -1027,19 +364,6 @@ class SettingsScreen extends StatelessWidget {
         leading: Icon(Icons.vibration_rounded, color: cs.primary),
         child: Column(
           children: [
-            AnimatedBuilder(
-              animation: startupCtrl,
-              builder: (context, _) {
-                return SwitchListTile.adaptive(
-                  secondary: const Icon(Icons.history_rounded),
-                  title: Text(context.l10n.autoOpenLastRemoteTitle),
-                  subtitle: Text(context.l10n.autoOpenLastRemoteSubtitle),
-                  value: startupCtrl.autoOpenLastRemote,
-                  onChanged: startupCtrl.setAutoOpenLastRemote,
-                );
-              },
-            ),
-            const Divider(height: 1),
             AnimatedBuilder(
               animation: HapticsController.instance,
               builder: (context, _) {
@@ -1239,66 +563,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRemotesSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SectionCard(
-        title: context.l10n.backupTitle,
-        subtitle: context.l10n.backupSubtitle,
-        leading: Icon(Icons.storage_rounded, color: cs.primary),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.file_upload_outlined),
-              title: Text(context.l10n.importBackup),
-              subtitle: Text(context.l10n.importBackupSubtitle),
-              onTap: () => _doImport(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.drive_folder_upload_outlined),
-              title: Text(context.l10n.bulkImportFolder),
-              subtitle: Text(context.l10n.bulkImportFolderSubtitle),
-              onTap: () => _doBulkImportFolder(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.file_download_outlined),
-              title: Text(context.l10n.exportBackup),
-              subtitle: Text(context.l10n.exportBackupSubtitle),
-              onTap: () => _doExport(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.restore_rounded),
-              title: Text(context.l10n.restoreDemoRemotes),
-              subtitle: Text(context.l10n.restoreDemoRemotesSubtitle),
-              onTap: () => _restoreDemoRemote(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading:
-                  Icon(Icons.delete_forever, color: theme.colorScheme.error),
-              title: Text(context.l10n.deleteAllRemotes,
-                  style: TextStyle(color: theme.colorScheme.error)),
-              subtitle: Text(context.l10n.deleteAllRemotesSubtitle),
-              onTap: () => _deleteAllRemotes(context),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Text(
-                context.l10n.backupTip,
-                style: TextStyle(color: cs.onSurfaceVariant),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildAboutSection(BuildContext context) {
     final theme = Theme.of(context);
@@ -1320,8 +584,7 @@ class SettingsScreen extends StatelessWidget {
                     info == null ? '—' : '${info.version}+${info.buildNumber}';
                 return ListTile(
                   leading: const Icon(Icons.apps),
-                  title:
-                      Text(context.l10n.aboutAppNameWithCreator(_creatorName)),
+                  title: Text(context.l10n.aboutAppNameWithCreator),
                   subtitle: Text(context.l10n.versionLabel(version)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
@@ -1330,8 +593,6 @@ class SettingsScreen extends StatelessWidget {
                         builder: (context) => AboutScreen(
                           repoUrl: _repoUrl,
                           issuesUrl: _issuesUrl,
-                          liberapayUrl:
-                              BuildFlags.showDonations ? _liberapayUrl : null,
                         ),
                       ),
                     );
@@ -1371,16 +632,6 @@ class SettingsScreen extends StatelessWidget {
             ),
             const Divider(height: 1),
             ListTile(
-              leading: const Icon(Icons.business),
-              title: Text(context.l10n.companyName),
-              subtitle: Text(context.l10n.visitWebsite),
-              trailing: const Icon(Icons.open_in_new),
-              onTap: () => _launchUrl(context, _companyUrl),
-              onLongPress: () => _copyToClipboard(context,
-                  text: _companyUrl, message: context.l10n.companyUrlCopied),
-            ),
-            const Divider(height: 1),
-            ListTile(
               leading: const Icon(Icons.receipt_long),
               title: Text(context.l10n.licenses),
               subtitle: Text(context.l10n.openSourceLicenses),
@@ -1389,7 +640,6 @@ class SettingsScreen extends StatelessWidget {
                 showLicensePage(
                   context: context,
                   applicationName: context.l10n.appTitle,
-                  applicationVersion: context.l10n.byCreator(_creatorName),
                   applicationIcon: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Icon(Icons.settings_remote_rounded,
@@ -1489,35 +739,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTvKillSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SectionCard(
-        title: context.l10n.tvKillTitle,
-        subtitle: context.l10n.tvKillSubtitle,
-        leading: Icon(Icons.power_settings_new_rounded, color: cs.primary),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.flash_on_rounded),
-              title: Text(context.l10n.openTvKill),
-              subtitle: Text(context.l10n.openTvKillSubtitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (_) => const UniversalPowerScreen()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _ThemeOptionCard extends StatelessWidget {

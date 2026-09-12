@@ -1,2 +1,0 @@
-Add home screen widgets for remote buttons
-Fix Brazilian Portuguese localization
