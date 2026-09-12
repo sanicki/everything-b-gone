@@ -66,9 +66,10 @@ android {
 
     buildTypes {
         release {
-            if (hasReleaseKeystore) {
-                signingConfig signingConfigs.release
-            }
+            // Fall back to debug signing when no release keystore is configured, so
+            // `flutter build apk --release` always produces an installable APK. The
+            // release workflow labels this fallback clearly in its release notes.
+            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             minifyEnabled true
             shrinkResources true
