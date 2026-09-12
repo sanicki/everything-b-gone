@@ -67,18 +67,30 @@ List<FlipperIrFile> filterFiles(
 
 /// The Power button's candidate signals across the filtered file set: one
 /// per file at most (a file's own power-then-off preference, via
-/// [powerOrOffSignalFor]), skipping files with neither.
+/// [powerOrOffSignalFor]), skipping files with neither, then deduplicated
+/// so identical transmissions (common across models sharing a protocol)
+/// are only sent once per cycle.
 List<FlipperIrSignal> matchingPowerSignals(List<FlipperIrFile> filteredFiles) {
-  return filteredFiles
-      .map(powerOrOffSignalFor)
-      .whereType<FlipperIrSignal>()
-      .toList();
+  return _dedupeSignals(
+    filteredFiles.map(powerOrOffSignalFor).whereType<FlipperIrSignal>(),
+  );
 }
 
-/// The Mute button's candidate signals across the filtered file set.
+/// The Mute button's candidate signals across the filtered file set,
+/// deduplicated the same way as [matchingPowerSignals].
 List<FlipperIrSignal> matchingMuteSignals(List<FlipperIrFile> filteredFiles) {
-  return filteredFiles
-      .map(muteSignalFor)
-      .whereType<FlipperIrSignal>()
-      .toList();
+  return _dedupeSignals(
+    filteredFiles.map(muteSignalFor).whereType<FlipperIrSignal>(),
+  );
+}
+
+List<FlipperIrSignal> _dedupeSignals(Iterable<FlipperIrSignal> signals) {
+  final seenKeys = <String>{};
+  final result = <FlipperIrSignal>[];
+  for (final signal in signals) {
+    if (seenKeys.add(signal.dedupeKey)) {
+      result.add(signal);
+    }
+  }
+  return result;
 }

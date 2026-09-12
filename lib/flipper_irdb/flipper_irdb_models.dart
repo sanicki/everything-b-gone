@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// A single named IR signal parsed out of a Flipper Zero `.ir` file — either
 /// protocol-encoded (protocol + params, matching `IrProtocolRegistry`'s
 /// param shape) or a raw timing pattern, never both.
@@ -17,6 +19,22 @@ class FlipperIrSignal {
   });
 
   bool get isRaw => protocol == null;
+
+  /// A key identifying this signal's actual transmitted content — same
+  /// protocol+params, or same raw pattern+frequency — ignoring [name], so
+  /// two files whose "power" signal transmits the identical command (common
+  /// across models sharing a protocol) can be deduplicated.
+  String get dedupeKey {
+    if (isRaw) {
+      return 'raw:${frequencyHz ?? 0}:${(rawData ?? '').trim()}';
+    }
+    final params = protocolParams ?? const <String, dynamic>{};
+    final sortedKeys = params.keys.toList()..sort();
+    final canonicalParams = <String, dynamic>{
+      for (final key in sortedKeys) key: params[key],
+    };
+    return 'protocol:$protocol:${jsonEncode(canonicalParams)}';
+  }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'name': name,
