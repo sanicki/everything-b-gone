@@ -11,7 +11,6 @@ import 'package:everythingbgone/ir/ir_protocol_registry.dart';
 import 'package:everythingbgone/ir/transmit_cycle_controller.dart';
 import 'package:everythingbgone/state/orientation_pref.dart';
 import 'package:everythingbgone/state/remote_display_prefs.dart';
-import 'package:everythingbgone/state/transmit_cycle_prefs.dart';
 import 'package:everythingbgone/utils/ir.dart';
 import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
 
@@ -396,12 +395,8 @@ class _EverythingBGoneScreenState extends State<EverythingBGoneScreen> {
 
   Widget _buildReadyBody(BuildContext context) {
     final filtered = _filteredFiles;
-    final powerMatches = matchingPowerBrandSignals(filtered);
-    final muteMatches = matchingMuteBrandSignals(filtered);
-    final powerSignals = powerMatches.map((m) => m.signal).toList(growable: false);
-    final muteSignals = muteMatches.map((m) => m.signal).toList(growable: false);
-    final powerBrands = powerMatches.map((m) => m.brand).toList(growable: false);
-    final muteBrands = muteMatches.map((m) => m.brand).toList(growable: false);
+    final powerSignals = matchingPowerSignals(filtered);
+    final muteSignals = matchingMuteSignals(filtered);
     final loadingSelection = _loadingTypes.isNotEmpty;
 
     return ListView(
@@ -433,8 +428,6 @@ class _EverythingBGoneScreenState extends State<EverythingBGoneScreen> {
             builder: (context, _) => _ActionArea(
               powerSignals: powerSignals,
               muteSignals: muteSignals,
-              powerBrands: powerBrands,
-              muteBrands: muteBrands,
               powerController: _powerController,
               muteController: _muteController,
               showSignalCounts: RemoteDisplayController.instance.showButtonMetadata,
@@ -536,8 +529,6 @@ class _EmptyMatchMessage extends StatelessWidget {
 class _ActionArea extends StatelessWidget {
   final List<FlipperIrSignal> powerSignals;
   final List<FlipperIrSignal> muteSignals;
-  final List<String> powerBrands;
-  final List<String> muteBrands;
   final TransmitCycleController<FlipperIrSignal> powerController;
   final TransmitCycleController<FlipperIrSignal> muteController;
   final bool showSignalCounts;
@@ -546,8 +537,6 @@ class _ActionArea extends StatelessWidget {
   const _ActionArea({
     required this.powerSignals,
     required this.muteSignals,
-    required this.powerBrands,
-    required this.muteBrands,
     required this.powerController,
     required this.muteController,
     required this.showSignalCounts,
@@ -563,7 +552,6 @@ class _ActionArea extends StatelessWidget {
           _CycleControl(
             label: 'POWER',
             signals: powerSignals,
-            brands: powerBrands,
             controller: powerController,
             otherRunning: muteController.running,
             color: cs.primary,
@@ -577,7 +565,6 @@ class _ActionArea extends StatelessWidget {
           _CycleControl(
             label: 'MUTE',
             signals: muteSignals,
-            brands: muteBrands,
             controller: muteController,
             otherRunning: powerController.running,
             color: cs.secondaryContainer,
@@ -594,7 +581,6 @@ class _ActionArea extends StatelessWidget {
 class _CycleControl extends StatelessWidget {
   final String label;
   final List<FlipperIrSignal> signals;
-  final List<String> brands;
   final TransmitCycleController<FlipperIrSignal> controller;
   final bool otherRunning;
   final Color color;
@@ -606,7 +592,6 @@ class _CycleControl extends StatelessWidget {
   const _CycleControl({
     required this.label,
     required this.signals,
-    required this.brands,
     required this.controller,
     required this.otherRunning,
     required this.color,
@@ -653,32 +638,43 @@ class _CycleControl extends StatelessWidget {
         ),
       );
 
-      // Match the color FilledButton.tonalIcon used for the pill this
-      // circle replaces while running, instead of the idle primary color.
-      final cs = Theme.of(context).colorScheme;
-      final skipTarget = nextBrandSkipTarget(brands, controller.attempted);
-      // Nothing left of the current brand to skip past (the common case —
-      // most brands survive dedup down to one signal) is exactly as
-      // pointless as skipping all the way to the end of the run: either
-      // way, tapping "Skip remaining <brand>" would do nothing, so show
-      // Stop instead.
-      final skipHasNoEffect =
-          skipTarget == controller.attempted || skipTarget >= controller.total;
-      final skipBrand = currentSkipBrand(brands, controller.attempted) ?? '';
-      final countText =
-          showSignalCount ? '${controller.attempted}/${controller.total}' : null;
+      if (big) {
+        // Match the color FilledButton.tonalIcon used for the pill this
+        // circle replaces while running, instead of the idle primary color.
+        final cs = Theme.of(context).colorScheme;
+        return Column(
+          children: [
+            _circle(
+              onPressed: controller.stop,
+              background: cs.secondaryContainer,
+              foreground: cs.onSecondaryContainer,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.stop_rounded, size: 40),
+                  const SizedBox(height: 4),
+                  Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  if (showSignalCount)
+                    Text('${controller.attempted}/${controller.total}',
+                        style: const TextStyle(fontSize: 11)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            progressBar,
+          ],
+        );
+      }
 
+      final stopLabel = showSignalCount
+          ? 'Stop — $label (${controller.attempted}/${controller.total})'
+          : 'Stop — $label';
       return Column(
         children: [
-          _HoldToSkipOrStop(
-            big: big,
-            background: cs.secondaryContainer,
-            foreground: cs.onSecondaryContainer,
-            skipHasNoEffect: skipHasNoEffect,
-            skipLabel: 'Skip remaining $skipBrand',
-            countText: countText,
-            onSkipBrand: () => controller.skipTo(skipTarget),
-            onStop: controller.stop,
+          FilledButton.tonalIcon(
+            onPressed: controller.stop,
+            icon: const Icon(Icons.stop_rounded),
+            label: Text(stopLabel),
           ),
           const SizedBox(height: 8),
           progressBar,
@@ -688,7 +684,7 @@ class _CycleControl extends StatelessWidget {
 
     final onPressed = (otherRunning || !hasTransmitter)
         ? null
-        : () => controller.start(signals, delayMs: TransmitCyclePrefs.instance.delayMs);
+        : () => controller.start(signals, delayMs: 700);
 
     if (big) {
       return _circle(
@@ -713,249 +709,6 @@ class _CycleControl extends StatelessWidget {
       onPressed: onPressed,
       icon: const Icon(Icons.volume_off_rounded),
       label: Text(showSignalCount ? '$label (${signals.length})' : label),
-    );
-  }
-}
-
-/// The control shown while a Power/Mute cycle is running. A quick tap
-/// skips the remaining signals for the brand that just fired (or is about
-/// to); holding past a short threshold stops the whole run instead. The
-/// button progressively morphs from the skip face to the stop face as the
-/// hold approaches that threshold — via a clock-style radial sweep on the
-/// Power circle / a left-to-right sweep on the Mute pill, both tied to
-/// actual hold duration — so the two very different actions never share a
-/// single ambiguous instant. When skipping the current brand would have no
-/// effect — either it's the last brand left, or (the common case) the
-/// brand already survived dedup down to one signal so the very next
-/// candidate is already a different brand — there's nothing left to
-/// distinguish "skip" from "stop": the control shows the stop face at
-/// rest and a plain tap stops immediately, same as before this feature.
-class _HoldToSkipOrStop extends StatefulWidget {
-  final bool big;
-  final Color background;
-  final Color foreground;
-  final bool skipHasNoEffect;
-  final String skipLabel;
-  final String? countText;
-  final VoidCallback onSkipBrand;
-  final VoidCallback onStop;
-
-  const _HoldToSkipOrStop({
-    required this.big,
-    required this.background,
-    required this.foreground,
-    required this.skipHasNoEffect,
-    required this.skipLabel,
-    required this.countText,
-    required this.onSkipBrand,
-    required this.onStop,
-  });
-
-  @override
-  State<_HoldToSkipOrStop> createState() => _HoldToSkipOrStopState();
-}
-
-class _HoldToSkipOrStopState extends State<_HoldToSkipOrStop>
-    with SingleTickerProviderStateMixin {
-  static const _holdThreshold = Duration(milliseconds: 550);
-
-  late final AnimationController _hold = AnimationController(
-    vsync: this,
-    duration: _holdThreshold,
-  )..addStatusListener(_onHoldStatusChanged);
-
-  bool _pressed = false;
-
-  void _onHoldStatusChanged(AnimationStatus status) {
-    if (status == AnimationStatus.completed) {
-      widget.onStop();
-    }
-  }
-
-  void _onTapDown(TapDownDetails _) {
-    _pressed = true;
-    _hold.forward(from: 0);
-  }
-
-  void _onTapUp(TapUpDetails _) {
-    if (!_pressed) return;
-    _pressed = false;
-    if (_hold.status == AnimationStatus.completed) return;
-    _hold.reverse();
-    widget.onSkipBrand();
-  }
-
-  void _onTapCancel() {
-    _pressed = false;
-    if (_hold.status != AnimationStatus.completed) {
-      _hold.reverse();
-    }
-  }
-
-  @override
-  void dispose() {
-    _hold.dispose();
-    super.dispose();
-  }
-
-  Widget _face({required IconData icon, required String label}) {
-    if (widget.big) {
-      final children = <Widget>[
-        Icon(icon, size: 40, color: widget.foreground),
-        const SizedBox(height: 4),
-        // Brand names vary a lot in length ("Sony" vs. "AmazonBasics"); the
-        // circle is a fixed 160px, so let this wrap up to two lines rather
-        // than overflow.
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: widget.foreground),
-        ),
-      ];
-      if (widget.countText != null) {
-        children.add(Text(widget.countText!,
-            style: TextStyle(fontSize: 11, color: widget.foreground)));
-      }
-      return Column(mainAxisSize: MainAxisSize.min, children: children);
-    }
-
-    final children = <Widget>[
-      Icon(icon, size: 20, color: widget.foreground),
-      const SizedBox(width: 8),
-      // Same variable-length concern as above; the pill has a fixed width,
-      // and a Row doesn't wrap text on its own, so this needs to be able to
-      // shrink and ellipsize instead of overflowing.
-      Flexible(
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontWeight: FontWeight.w600, color: widget.foreground),
-        ),
-      ),
-    ];
-    if (widget.countText != null) {
-      children.add(const SizedBox(width: 6));
-      children.add(Text('(${widget.countText})', style: TextStyle(color: widget.foreground)));
-    }
-    return Row(mainAxisSize: MainAxisSize.min, children: children);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.skipHasNoEffect) {
-      final content = _face(icon: Icons.stop_rounded, label: 'Stop');
-      if (widget.big) {
-        return SizedBox(
-          width: 160,
-          height: 160,
-          child: FilledButton(
-            onPressed: widget.onStop,
-            style: FilledButton.styleFrom(
-              shape: const CircleBorder(),
-              backgroundColor: widget.background,
-              foregroundColor: widget.foreground,
-            ),
-            child: content,
-          ),
-        );
-      }
-      return SizedBox(
-        width: 220,
-        height: 48,
-        child: FilledButton.tonal(
-          onPressed: widget.onStop,
-          style: FilledButton.styleFrom(
-            backgroundColor: widget.background,
-            foregroundColor: widget.foreground,
-          ),
-          child: content,
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      child: AnimatedBuilder(
-        animation: _hold,
-        builder: (context, _) {
-          final progress = _hold.value;
-          final skipOpacity = (1 - progress * 2).clamp(0.0, 1.0);
-          final stopOpacity = ((progress - 0.5) * 2).clamp(0.0, 1.0);
-          final crossfaded = Stack(
-            alignment: Alignment.center,
-            children: [
-              Opacity(
-                opacity: skipOpacity,
-                child: _face(icon: Icons.fast_forward_rounded, label: widget.skipLabel),
-              ),
-              Opacity(
-                opacity: stopOpacity,
-                child: _face(icon: Icons.stop_rounded, label: 'Stop'),
-              ),
-            ],
-          );
-
-          if (widget.big) {
-            return SizedBox(
-              width: 160,
-              height: 160,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Material(
-                      color: widget.background,
-                      shape: const CircleBorder(),
-                      child: Center(child: crossfaded),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Padding(
-                        padding: const EdgeInsets.all(3),
-                        child: CircularProgressIndicator(
-                          value: progress,
-                          strokeWidth: 4,
-                          backgroundColor: Colors.transparent,
-                          color: widget.foreground.withValues(
-                              alpha: (progress * 0.9).clamp(0.0, 0.9)),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return SizedBox(
-            width: 220,
-            height: 48,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: Material(
-                color: widget.background,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: progress,
-                        child: Container(color: widget.foreground.withValues(alpha: 0.20)),
-                      ),
-                    ),
-                    Center(child: crossfaded),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 }

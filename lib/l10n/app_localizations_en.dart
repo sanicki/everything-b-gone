@@ -137,18 +137,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get intensityStrong => 'Strong';
 
   @override
-  String get reactionTimeTitle => 'Reaction time';
-
-  @override
-  String get reactionTimeSubtitle =>
-      'Extra pause added before each signal during a Power or Mute run, so you have time to see a result before the next one fires.';
-
-  @override
-  String reactionTimeValueLabel(Object seconds) {
-    return '+${seconds}s';
-  }
-
-  @override
   String get remoteButtonMetadataTitle => 'Show button technical labels';
 
   @override

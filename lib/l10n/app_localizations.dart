@@ -334,24 +334,6 @@ abstract class AppLocalizations {
   /// **'Strong'**
   String get intensityStrong;
 
-  /// Settings slider title for the extra pause added between signals during a Power/Mute run.
-  ///
-  /// In en, this message translates to:
-  /// **'Reaction time'**
-  String get reactionTimeTitle;
-
-  /// Settings slider subtitle explaining the reaction time delay.
-  ///
-  /// In en, this message translates to:
-  /// **'Extra pause added before each signal during a Power or Mute run, so you have time to see a result before the next one fires.'**
-  String get reactionTimeSubtitle;
-
-  /// Current value readout next to the reaction time slider.
-  ///
-  /// In en, this message translates to:
-  /// **'+{seconds}s'**
-  String reactionTimeValueLabel(Object seconds);
-
   /// Settings toggle title for showing or hiding technical metadata on remote buttons.
   ///
   /// In en, this message translates to:
