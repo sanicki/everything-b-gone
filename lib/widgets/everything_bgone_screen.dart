@@ -42,6 +42,7 @@ class _EverythingBGoneScreenState extends State<EverythingBGoneScreen> {
   Set<String> _selectedBrands = <String>{};
 
   IrTransmitterCapabilities? _capabilities;
+  StreamSubscription<IrTransmitterCapabilities>? _capsSub;
 
   static Future<void> _sendSignal(FlipperIrSignal signal) async {
     if (signal.isRaw) {
@@ -66,11 +67,23 @@ class _EverythingBGoneScreenState extends State<EverythingBGoneScreen> {
     _muteController = TransmitCycleController<FlipperIrSignal>(sendCandidate: _sendSignal);
     _powerController.addListener(_onCycleChanged);
     _muteController.addListener(_onCycleChanged);
+    _capsSub = IrTransmitterPlatform.capabilitiesEvents().listen(
+      (caps) {
+        if (!mounted) return;
+        setState(() {
+          _capabilities = caps;
+        });
+      },
+      onError: (_) {},
+      cancelOnError: false,
+    );
     unawaited(_bootstrap());
   }
 
   @override
   void dispose() {
+    _capsSub?.cancel();
+    _capsSub = null;
     _powerController.removeListener(_onCycleChanged);
     _muteController.removeListener(_onCycleChanged);
     _powerController.dispose();
