@@ -38,18 +38,19 @@ jobs:
 
           latest_tag=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1 || true)
           if [ -z "$latest_tag" ]; then
-            base_version="0.1.0"
+            # No release has ever been tagged: this run produces the initial
+            # release, so use the base version as-is rather than bumping it.
+            next_version="0.1.0"
           else
             base_version="${latest_tag#v}"
+            IFS='.' read -r major minor patch <<< "$base_version"
+            case "${{ github.event.inputs.bump }}" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              patch) patch=$((patch + 1)) ;;
+            esac
+            next_version="$major.$minor.$patch"
           fi
-
-          IFS='.' read -r major minor patch <<< "$base_version"
-          case "${{ github.event.inputs.bump }}" in
-            major) major=$((major + 1)); minor=0; patch=0 ;;
-            minor) minor=$((minor + 1)); patch=0 ;;
-            patch) patch=$((patch + 1)) ;;
-          esac
-          next_version="$major.$minor.$patch"
           next_build=$((current_build + 1))
           next_tag="v$next_version"
 
