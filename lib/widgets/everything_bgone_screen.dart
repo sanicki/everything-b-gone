@@ -10,6 +10,7 @@ import 'package:everythingbgone/flipper_irdb/kill_switch_prefs.dart';
 import 'package:everythingbgone/ir/ir_protocol_registry.dart';
 import 'package:everythingbgone/ir/transmit_cycle_controller.dart';
 import 'package:everythingbgone/state/orientation_pref.dart';
+import 'package:everythingbgone/state/remote_display_prefs.dart';
 import 'package:everythingbgone/utils/ir.dart';
 import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
 
@@ -409,11 +410,15 @@ class _EverythingBGoneScreenState extends State<EverythingBGoneScreen> {
         else if (filtered.isEmpty || (powerSignals.isEmpty && muteSignals.isEmpty))
           const _EmptyMatchMessage()
         else
-          _ActionArea(
-            powerSignals: powerSignals,
-            muteSignals: muteSignals,
-            powerController: _powerController,
-            muteController: _muteController,
+          AnimatedBuilder(
+            animation: RemoteDisplayController.instance,
+            builder: (context, _) => _ActionArea(
+              powerSignals: powerSignals,
+              muteSignals: muteSignals,
+              powerController: _powerController,
+              muteController: _muteController,
+              showSignalCounts: RemoteDisplayController.instance.showButtonMetadata,
+            ),
           ),
       ],
     );
@@ -512,12 +517,14 @@ class _ActionArea extends StatelessWidget {
   final List<FlipperIrSignal> muteSignals;
   final TransmitCycleController<FlipperIrSignal> powerController;
   final TransmitCycleController<FlipperIrSignal> muteController;
+  final bool showSignalCounts;
 
   const _ActionArea({
     required this.powerSignals,
     required this.muteSignals,
     required this.powerController,
     required this.muteController,
+    required this.showSignalCounts,
   });
 
   @override
@@ -534,6 +541,7 @@ class _ActionArea extends StatelessWidget {
             color: cs.primary,
             onColor: cs.onPrimary,
             big: true,
+            showSignalCount: showSignalCounts,
           ),
         if (powerSignals.isNotEmpty && muteSignals.isNotEmpty) const SizedBox(height: 20),
         if (muteSignals.isNotEmpty)
@@ -545,6 +553,7 @@ class _ActionArea extends StatelessWidget {
             color: cs.secondaryContainer,
             onColor: cs.onSecondaryContainer,
             big: false,
+            showSignalCount: showSignalCounts,
           ),
       ],
     );
@@ -559,6 +568,7 @@ class _CycleControl extends StatelessWidget {
   final Color color;
   final Color onColor;
   final bool big;
+  final bool showSignalCount;
 
   const _CycleControl({
     required this.label,
@@ -568,6 +578,7 @@ class _CycleControl extends StatelessWidget {
     required this.color,
     required this.onColor,
     required this.big,
+    required this.showSignalCount,
   });
 
   @override
@@ -575,12 +586,15 @@ class _CycleControl extends StatelessWidget {
     final running = controller.running;
 
     if (running) {
+      final stopLabel = showSignalCount
+          ? 'Stop — $label (${controller.attempted}/${controller.total})'
+          : 'Stop — $label';
       return Column(
         children: [
           FilledButton.tonalIcon(
             onPressed: controller.stop,
             icon: const Icon(Icons.stop_rounded),
-            label: Text('Stop — $label (${controller.attempted}/${controller.total})'),
+            label: Text(stopLabel),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -613,8 +627,9 @@ class _CycleControl extends StatelessWidget {
               const Icon(Icons.power_settings_new_rounded, size: 40),
               const SizedBox(height: 4),
               Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Text('${signals.length} signal${signals.length == 1 ? '' : 's'}',
-                  style: const TextStyle(fontSize: 11)),
+              if (showSignalCount)
+                Text('${signals.length} signal${signals.length == 1 ? '' : 's'}',
+                    style: const TextStyle(fontSize: 11)),
             ],
           ),
         ),
@@ -624,7 +639,7 @@ class _CycleControl extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.volume_off_rounded),
-      label: Text('$label (${signals.length})'),
+      label: Text(showSignalCount ? '$label (${signals.length})' : label),
     );
   }
 }
