@@ -331,12 +331,8 @@
   "backupTip": "Tip: export a backup before large edits. Import supports full backups, legacy remotes-only JSON backups, and Flipper Zero .ir files.",
   "aboutTitle": "About",
   "aboutSubtitle": "App information and open-source details",
-  "aboutAppNameWithCreator": "IR Blaster - {creator}",
-  "@aboutAppNameWithCreator": {
-    "placeholders": {
-      "creator": {}
-    }
-  },
+  "aboutAppNameWithCreator": "Everything-B-Gone",
+  "@aboutAppNameWithCreator": {},
   "versionLabel": "Version {version}",
   "@versionLabel": {
     "placeholders": {

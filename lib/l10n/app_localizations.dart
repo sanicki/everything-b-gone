@@ -1681,8 +1681,8 @@ abstract class AppLocalizations {
   /// No description provided for @aboutAppNameWithCreator.
   ///
   /// In en, this message translates to:
-  /// **'IR Blaster - {creator}'**
-  String aboutAppNameWithCreator(Object creator);
+  /// **'Everything-B-Gone'**
+  String get aboutAppNameWithCreator;
 
   /// No description provided for @versionLabel.
   ///
