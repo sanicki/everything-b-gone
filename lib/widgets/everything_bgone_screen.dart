@@ -581,7 +581,12 @@ class _CycleControl extends StatelessWidget {
     required this.showSignalCount,
   });
 
-  Widget _circle({required VoidCallback? onPressed, required Widget child}) {
+  Widget _circle({
+    required VoidCallback? onPressed,
+    required Color background,
+    required Color foreground,
+    required Widget child,
+  }) {
     return SizedBox(
       width: 160,
       height: 160,
@@ -589,8 +594,8 @@ class _CycleControl extends StatelessWidget {
         onPressed: onPressed,
         style: FilledButton.styleFrom(
           shape: const CircleBorder(),
-          backgroundColor: color,
-          foregroundColor: onColor,
+          backgroundColor: background,
+          foregroundColor: foreground,
         ),
         child: child,
       ),
@@ -610,10 +615,15 @@ class _CycleControl extends StatelessWidget {
       );
 
       if (big) {
+        // Match the color FilledButton.tonalIcon used for the pill this
+        // circle replaces while running, instead of the idle primary color.
+        final cs = Theme.of(context).colorScheme;
         return Column(
           children: [
             _circle(
               onPressed: controller.stop,
+              background: cs.secondaryContainer,
+              foreground: cs.onSecondaryContainer,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -654,6 +664,8 @@ class _CycleControl extends StatelessWidget {
     if (big) {
       return _circle(
         onPressed: onPressed,
+        background: color,
+        foreground: onColor,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
