@@ -630,24 +630,6 @@ class _CycleControl extends StatelessWidget {
     );
   }
 
-  /// The index a "skip this brand" tap would jump to: past every remaining
-  /// candidate that shares a brand with the one just sent (or, if nothing
-  /// has sent yet, the one about to send). Also tells the caller whether
-  /// skipping would just end the run (nothing left after this brand).
-  int _skipTargetIndex() {
-    if (brands.isEmpty) return 0;
-    final attempted = controller.attempted;
-    final refIndex =
-        attempted > 0 ? attempted - 1 : (attempted < brands.length ? attempted : -1);
-    if (refIndex < 0 || refIndex >= brands.length) return brands.length;
-    final referenceBrand = brands[refIndex];
-    var target = attempted;
-    while (target < brands.length && brands[target] == referenceBrand) {
-      target++;
-    }
-    return target;
-  }
-
   @override
   Widget build(BuildContext context) {
     final running = controller.running;
@@ -663,8 +645,13 @@ class _CycleControl extends StatelessWidget {
       // Match the color FilledButton.tonalIcon used for the pill this
       // circle replaces while running, instead of the idle primary color.
       final cs = Theme.of(context).colorScheme;
-      final skipTarget = _skipTargetIndex();
-      final skipEndsRun = skipTarget >= controller.total;
+      final skipTarget = nextBrandSkipTarget(brands, controller.attempted);
+      // Nothing left of the current brand to skip past (the common case —
+      // most brands survive dedup down to one signal) is exactly as
+      // pointless as skipping all the way to the end of the run: either
+      // way, tapping "Next Brand" would do nothing, so show Stop instead.
+      final skipHasNoEffect =
+          skipTarget == controller.attempted || skipTarget >= controller.total;
       final countText =
           showSignalCount ? '${controller.attempted}/${controller.total}' : null;
 
@@ -674,7 +661,7 @@ class _CycleControl extends StatelessWidget {
             big: big,
             background: cs.secondaryContainer,
             foreground: cs.onSecondaryContainer,
-            skipEndsRun: skipEndsRun,
+            skipHasNoEffect: skipHasNoEffect,
             countText: countText,
             onSkipBrand: () => controller.skipTo(skipTarget),
             onStop: controller.stop,
@@ -723,15 +710,17 @@ class _CycleControl extends StatelessWidget {
 /// hold approaches that threshold — via a clock-style radial sweep on the
 /// Power circle / a left-to-right sweep on the Mute pill, both tied to
 /// actual hold duration — so the two very different actions never share a
-/// single ambiguous instant. When skipping the current brand would just
-/// end the run anyway (it's the last brand left), there's nothing left to
+/// single ambiguous instant. When skipping the current brand would have no
+/// effect — either it's the last brand left, or (the common case) the
+/// brand already survived dedup down to one signal so the very next
+/// candidate is already a different brand — there's nothing left to
 /// distinguish "skip" from "stop": the control shows the stop face at
 /// rest and a plain tap stops immediately, same as before this feature.
 class _HoldToSkipOrStop extends StatefulWidget {
   final bool big;
   final Color background;
   final Color foreground;
-  final bool skipEndsRun;
+  final bool skipHasNoEffect;
   final String? countText;
   final VoidCallback onSkipBrand;
   final VoidCallback onStop;
@@ -740,7 +729,7 @@ class _HoldToSkipOrStop extends StatefulWidget {
     required this.big,
     required this.background,
     required this.foreground,
-    required this.skipEndsRun,
+    required this.skipHasNoEffect,
     required this.countText,
     required this.onSkipBrand,
     required this.onStop,
@@ -824,7 +813,7 @@ class _HoldToSkipOrStopState extends State<_HoldToSkipOrStop>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.skipEndsRun) {
+    if (widget.skipHasNoEffect) {
       final content = _face(icon: Icons.stop_rounded, label: 'Stop');
       if (widget.big) {
         return SizedBox(

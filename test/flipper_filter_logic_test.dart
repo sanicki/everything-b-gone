@@ -259,4 +259,40 @@ void main() {
       expect(result.map((m) => m.signal.name), everyElement('Power'));
     });
   });
+
+  group('nextBrandSkipTarget', () {
+    test(
+        'is a no-op (equals attempted) once the just-sent brand has no more '
+        'entries — the common case after dedup, not an edge case', () {
+      final brands = ['Samsung', 'LG', 'Sony', 'Vizio'];
+
+      // Samsung already sent (index 0): the next candidate (LG) is already
+      // a different brand, so skipping does nothing.
+      expect(nextBrandSkipTarget(brands, 1), 1);
+      expect(nextBrandSkipTarget(brands, 2), 2);
+      expect(nextBrandSkipTarget(brands, 3), 3);
+    });
+
+    test('skips every remaining signal that shares the just-sent brand', () {
+      final brands = ['Sony', 'Sony', 'Sony', 'LG', 'Vizio'];
+
+      // First Sony signal just sent (index 0); two more Sony entries remain.
+      expect(nextBrandSkipTarget(brands, 1), 3);
+      // Nothing sent yet, but the upcoming brand (Sony) still has 3 entries
+      // — skipping jumps straight past all of them.
+      expect(nextBrandSkipTarget(brands, 0), 3);
+      // Already past all of Sony's entries: nothing left to skip.
+      expect(nextBrandSkipTarget(brands, 3), 3);
+    });
+
+    test('skipping the last brand reaches the end of the list', () {
+      final brands = ['Sony', 'LG', 'LG'];
+
+      // Sony sent (index 0); now on LG's first entry (index 1) — the last
+      // brand in the list, with one more LG entry remaining.
+      expect(nextBrandSkipTarget(brands, 2), 3);
+      // Already past both LG entries: nothing left to skip.
+      expect(nextBrandSkipTarget(brands, 3), 3);
+    });
+  });
 }
