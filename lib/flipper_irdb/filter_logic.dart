@@ -121,3 +121,27 @@ List<BrandSignal> _dedupeBrandSignals(
   }
   return result;
 }
+
+/// Where a "skip this brand" action should jump `attempted` to: past every
+/// remaining entry in [brands] that shares a brand with the one just sent
+/// (index `attempted - 1`), or — if nothing has sent yet — the one about
+/// to send (index `attempted`). Always `>= attempted`.
+///
+/// Equals `attempted` itself whenever there's nothing left of that brand
+/// to skip — which is the *common* case, not an edge case: dedup already
+/// collapses most brands down to a single signal, so the very next
+/// candidate is usually already a different brand. Callers must treat a
+/// result equal to `attempted` as "skipping would do nothing" rather than
+/// assuming a "Next Brand" affordance always has something to skip past.
+int nextBrandSkipTarget(List<String> brands, int attempted) {
+  if (brands.isEmpty) return 0;
+  final refIndex =
+      attempted > 0 ? attempted - 1 : (attempted < brands.length ? attempted : -1);
+  if (refIndex < 0 || refIndex >= brands.length) return brands.length;
+  final referenceBrand = brands[refIndex];
+  var target = attempted;
+  while (target < brands.length && brands[target] == referenceBrand) {
+    target++;
+  }
+  return target;
+}
