@@ -1,20 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/state/app_locale.dart';
-import 'package:irblaster_controller/state/app_shortcuts.dart';
-import 'package:irblaster_controller/state/continue_context_prefs.dart';
-import 'package:irblaster_controller/state/haptics.dart';
-import 'package:irblaster_controller/state/remotes_state.dart';
-import 'package:irblaster_controller/state/startup_prefs.dart';
-import 'package:irblaster_controller/utils/ir_transmitter_platform.dart';
-import 'package:irblaster_controller/utils/remote.dart';
-import 'package:irblaster_controller/widgets/ir_finder_screen.dart';
-import 'package:irblaster_controller/widgets/macros_tab.dart';
-import 'package:irblaster_controller/widgets/remote_list.dart';
-import 'package:irblaster_controller/widgets/remote_view.dart';
-import 'package:irblaster_controller/widgets/settings_screen.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/state/app_locale.dart';
+import 'package:everythingbgone/state/app_shortcuts.dart';
+import 'package:everythingbgone/state/continue_context_prefs.dart';
+import 'package:everythingbgone/state/haptics.dart';
+import 'package:everythingbgone/state/remotes_state.dart';
+import 'package:everythingbgone/state/startup_prefs.dart';
+import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
+import 'package:everythingbgone/utils/remote.dart';
+import 'package:everythingbgone/widgets/ir_finder_screen.dart';
+import 'package:everythingbgone/widgets/macros_tab.dart';
+import 'package:everythingbgone/widgets/remote_list.dart';
+import 'package:everythingbgone/widgets/remote_view.dart';
+import 'package:everythingbgone/widgets/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeShell extends StatefulWidget {

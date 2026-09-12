@@ -1,5 +1,5 @@
-name: irblaster_controller
-description: Create custom remote using hex codes or raw signals.
+name: everythingbgone
+description: "Everything-B-Gone: a single-purpose IR kill switch remote."
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 3.4.1+44
+version: 0.1.0+1
 
 environment:
   sdk: '>=3.2.3 <4.0.0'
@@ -74,8 +74,8 @@ flutter_launcher_icons:
   android: true
   ios: false
   min_sdk_android: 21
-  image_path_android: assets/images/logo.png
-  adaptive_icon_background: "#FFFFFF"
+  image_path_android: assets/images/icon_legacy.png
+  adaptive_icon_background: "#1c1d21"
   adaptive_icon_foreground: assets/images/logo.png
   adaptive_icon_monochrome: assets/images/icon_mono.png
 

@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/l10n/icon_picker_names.dart';
-import 'package:irblaster_controller/state/haptics.dart';
+import 'package:everythingbgone/l10n/icon_picker_names.dart';
+import 'package:everythingbgone/state/haptics.dart';
 import 'package:flutter/services.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/models/macro_step.dart';
-import 'package:irblaster_controller/models/timed_macro.dart';
-import 'package:irblaster_controller/utils/button_label.dart';
-import 'package:irblaster_controller/utils/remote.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/models/macro_step.dart';
+import 'package:everythingbgone/models/timed_macro.dart';
+import 'package:everythingbgone/utils/button_label.dart';
+import 'package:everythingbgone/utils/remote.dart';
 
 class MacroEditorScreen extends StatefulWidget {
   final TimedMacro? macro;

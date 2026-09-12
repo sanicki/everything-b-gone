@@ -1,4 +1,4 @@
-import 'package:irblaster_controller/utils/remote.dart';
+import 'package:everythingbgone/utils/remote.dart';
 
 enum RemoteLayoutStyle { compact, wide }
 

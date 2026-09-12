@@ -1,15 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/ir_finder/irblaster_db.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/state/continue_context_prefs.dart';
-import 'package:irblaster_controller/state/haptics.dart';
-import 'package:irblaster_controller/state/orientation_pref.dart';
-import 'package:irblaster_controller/universal_power/power_code_repository.dart';
-import 'package:irblaster_controller/universal_power/universal_power_controller.dart';
-import 'package:irblaster_controller/universal_power/universal_power_prefs.dart';
-import 'package:irblaster_controller/utils/ir_transmitter_platform.dart';
+import 'package:everythingbgone/ir_finder/irblaster_db.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/state/continue_context_prefs.dart';
+import 'package:everythingbgone/state/haptics.dart';
+import 'package:everythingbgone/state/orientation_pref.dart';
+import 'package:everythingbgone/universal_power/power_code_repository.dart';
+import 'package:everythingbgone/universal_power/universal_power_controller.dart';
+import 'package:everythingbgone/universal_power/universal_power_prefs.dart';
+import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
 
 class UniversalPowerScreen extends StatefulWidget {
   final String? initialBrand;

@@ -1,6 +1,6 @@
 <!-- android/app/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.nslabs.ir_blaster">
+    package="com.example.everythingbgone">
 
     <!-- Declare which external ACTION_* intents your app will use -->
     <queries>
@@ -46,7 +46,7 @@
         android:maxSdkVersion="29" />
 
     <application
-        android:label="IR Blaster Remote"
+        android:label="Everything-B-Gone"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
@@ -93,7 +93,7 @@
             android:name=".UsbPermissionReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="org.nslabs.irblaster.USB_PERMISSION" />
+                <action android:name="com.example.everythingbgone.USB_PERMISSION" />
             </intent-filter>
         </receiver>
 
@@ -102,7 +102,7 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="org.nslabs.irblaster.widget.SEND_BUTTON" />
+                <action android:name="com.example.everythingbgone.widget.SEND_BUTTON" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

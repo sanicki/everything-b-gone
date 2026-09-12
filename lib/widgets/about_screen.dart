@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:irblaster_controller/config/build_flags.dart';
-import 'package:irblaster_controller/state/haptics.dart';
+import 'package:everythingbgone/config/build_flags.dart';
+import 'package:everythingbgone/state/haptics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';

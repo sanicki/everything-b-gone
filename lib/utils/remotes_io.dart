@@ -5,10 +5,10 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/models/timed_macro.dart';
-import 'package:irblaster_controller/utils/macros_io.dart';
-import 'package:irblaster_controller/utils/remote.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/models/timed_macro.dart';
+import 'package:everythingbgone/utils/macros_io.dart';
+import 'package:everythingbgone/utils/remote.dart';
 import 'package:media_store_plus/media_store_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';

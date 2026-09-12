@@ -4,27 +4,27 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:irblaster_controller/state/app_locale.dart';
-import 'package:irblaster_controller/state/app_shortcuts.dart';
-import 'package:irblaster_controller/state/app_theme.dart';
-import 'package:irblaster_controller/state/dynamic_color.dart';
-import 'package:irblaster_controller/state/haptics.dart';
-import 'package:irblaster_controller/state/orientation_pref.dart';
-import 'package:irblaster_controller/state/remote_display_prefs.dart';
-import 'package:irblaster_controller/state/startup_prefs.dart';
-import 'package:irblaster_controller/state/transmitter_prefs.dart';
-import 'package:irblaster_controller/state/remotes_state.dart';
-import 'package:irblaster_controller/state/macros_state.dart';
-import 'package:irblaster_controller/utils/ir.dart';
+import 'package:everythingbgone/state/app_locale.dart';
+import 'package:everythingbgone/state/app_shortcuts.dart';
+import 'package:everythingbgone/state/app_theme.dart';
+import 'package:everythingbgone/state/dynamic_color.dart';
+import 'package:everythingbgone/state/haptics.dart';
+import 'package:everythingbgone/state/orientation_pref.dart';
+import 'package:everythingbgone/state/remote_display_prefs.dart';
+import 'package:everythingbgone/state/startup_prefs.dart';
+import 'package:everythingbgone/state/transmitter_prefs.dart';
+import 'package:everythingbgone/state/remotes_state.dart';
+import 'package:everythingbgone/state/macros_state.dart';
+import 'package:everythingbgone/utils/ir.dart';
 import 'package:flutter/services.dart';
-import 'package:irblaster_controller/l10n/app_localizations.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/utils/remote.dart';
-import 'package:irblaster_controller/utils/macros_io.dart';
-import 'package:irblaster_controller/widgets/home_shell.dart';
-import 'package:irblaster_controller/widgets/quick_tile_chooser.dart';
-import 'package:irblaster_controller/state/quick_settings_prefs.dart';
-import 'package:irblaster_controller/state/home_button_widget_prefs.dart';
+import 'package:everythingbgone/l10n/app_localizations.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/utils/remote.dart';
+import 'package:everythingbgone/utils/macros_io.dart';
+import 'package:everythingbgone/widgets/home_shell.dart';
+import 'package:everythingbgone/widgets/quick_tile_chooser.dart';
+import 'package:everythingbgone/state/quick_settings_prefs.dart';
+import 'package:everythingbgone/state/home_button_widget_prefs.dart';
 import 'package:media_store_plus/media_store_plus.dart';
 
 Future<void> main() async {
@@ -65,11 +65,11 @@ Future<void> main() async {
 final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
 const MethodChannel _controlChannel =
-    MethodChannel('org.nslabs/irtransmitter_controls');
+    MethodChannel('com.example.everythingbgone/irtransmitter_controls');
 const MethodChannel _quickTileChannel =
-    MethodChannel('org.nslabs/irtransmitter_quick_tile');
+    MethodChannel('com.example.everythingbgone/irtransmitter_quick_tile');
 const MethodChannel _homeWidgetChannel =
-    MethodChannel('org.nslabs/irtransmitter_home_widget');
+    MethodChannel('com.example.everythingbgone/irtransmitter_home_widget');
 String? _pendingQuickTileKey;
 int? _pendingHomeWidgetId;
 

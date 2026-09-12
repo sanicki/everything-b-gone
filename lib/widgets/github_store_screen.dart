@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/github_store/github_store_service.dart';
-import 'package:irblaster_controller/github_store/models.dart';
-import 'package:irblaster_controller/github_store/url_parser.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/state/remotes_state.dart';
-import 'package:irblaster_controller/utils/remote.dart';
-import 'package:irblaster_controller/utils/remotes_io.dart';
-import 'package:irblaster_controller/widgets/remote_view.dart';
+import 'package:everythingbgone/github_store/github_store_service.dart';
+import 'package:everythingbgone/github_store/models.dart';
+import 'package:everythingbgone/github_store/url_parser.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/state/remotes_state.dart';
+import 'package:everythingbgone/utils/remote.dart';
+import 'package:everythingbgone/utils/remotes_io.dart';
+import 'package:everythingbgone/widgets/remote_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 String _describeGitHubStoreError(

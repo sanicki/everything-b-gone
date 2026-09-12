@@ -3,18 +3,18 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:irblaster_controller/ir/ir_protocol_registry.dart';
-import 'package:irblaster_controller/ir/ir_protocol_types.dart';
-import 'package:irblaster_controller/ir_finder/irblaster_db.dart';
-import 'package:irblaster_controller/ir_finder/ir_finder_models.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/state/last_action_strip.dart';
-import 'package:irblaster_controller/utils/button_color_accessibility.dart';
-import 'package:irblaster_controller/utils/ir.dart';
-import 'package:irblaster_controller/utils/remote.dart';
-import 'package:irblaster_controller/widgets/code_test.dart';
-import 'package:irblaster_controller/widgets/icon_picker.dart';
-import 'package:irblaster_controller/widgets/ir_waveform_view.dart';
+import 'package:everythingbgone/ir/ir_protocol_registry.dart';
+import 'package:everythingbgone/ir/ir_protocol_types.dart';
+import 'package:everythingbgone/ir_finder/irblaster_db.dart';
+import 'package:everythingbgone/ir_finder/ir_finder_models.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/state/last_action_strip.dart';
+import 'package:everythingbgone/utils/button_color_accessibility.dart';
+import 'package:everythingbgone/utils/ir.dart';
+import 'package:everythingbgone/utils/remote.dart';
+import 'package:everythingbgone/widgets/code_test.dart';
+import 'package:everythingbgone/widgets/icon_picker.dart';
+import 'package:everythingbgone/widgets/ir_waveform_view.dart';
 import 'package:uuid/uuid.dart';
 
 enum _LabelType { image, text, icon }
@@ -59,7 +59,7 @@ String _necBitOrderLabel(_NecBitOrder value) {
 enum _DbPreset { power, volume, channel, navigation, all }
 
 const MethodChannel _platformChannel =
-    MethodChannel('org.nslabs/irtransmitter');
+    MethodChannel('com.example.everythingbgone/irtransmitter');
 
 class CreateButton extends StatefulWidget {
   final IRButton? button;

@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/l10n/icon_picker_names.dart';
-import 'package:irblaster_controller/state/continue_context_prefs.dart';
-import 'package:irblaster_controller/state/haptics.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/state/orientation_pref.dart';
-import 'package:irblaster_controller/models/macro_step.dart';
-import 'package:irblaster_controller/models/timed_macro.dart';
-import 'package:irblaster_controller/utils/button_label.dart';
-import 'package:irblaster_controller/utils/ir.dart';
-import 'package:irblaster_controller/utils/remote.dart';
+import 'package:everythingbgone/l10n/icon_picker_names.dart';
+import 'package:everythingbgone/state/continue_context_prefs.dart';
+import 'package:everythingbgone/state/haptics.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/state/orientation_pref.dart';
+import 'package:everythingbgone/models/macro_step.dart';
+import 'package:everythingbgone/models/timed_macro.dart';
+import 'package:everythingbgone/utils/button_label.dart';
+import 'package:everythingbgone/utils/ir.dart';
+import 'package:everythingbgone/utils/remote.dart';
 
 class MacroRunScreen extends StatefulWidget {
   final TimedMacro macro;

@@ -1,6 +1,6 @@
-import 'package:irblaster_controller/ir_finder/irblaster_db.dart';
-import 'package:irblaster_controller/universal_power/curated_power_patterns.dart';
-import 'package:irblaster_controller/universal_power/power_code.dart';
+import 'package:everythingbgone/ir_finder/irblaster_db.dart';
+import 'package:everythingbgone/universal_power/curated_power_patterns.dart';
+import 'package:everythingbgone/universal_power/power_code.dart';
 
 class PowerCodeRepository {
   final IrBlasterDb db;

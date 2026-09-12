@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:irblaster_controller/ir_finder/ir_finder_models.dart';
+import 'package:everythingbgone/ir_finder/ir_finder_models.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 

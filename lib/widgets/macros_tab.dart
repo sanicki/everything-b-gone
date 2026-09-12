@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/models/timed_macro.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/state/macros_state.dart';
-import 'package:irblaster_controller/state/remotes_state.dart';
-import 'package:irblaster_controller/utils/macros_io.dart';
-import 'package:irblaster_controller/utils/remote.dart';
-import 'package:irblaster_controller/widgets/macro_editor_screen.dart';
-import 'package:irblaster_controller/widgets/macro_run_screen.dart';
+import 'package:everythingbgone/models/timed_macro.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/state/macros_state.dart';
+import 'package:everythingbgone/state/remotes_state.dart';
+import 'package:everythingbgone/utils/macros_io.dart';
+import 'package:everythingbgone/utils/remote.dart';
+import 'package:everythingbgone/widgets/macro_editor_screen.dart';
+import 'package:everythingbgone/widgets/macro_run_screen.dart';
 
 class MacrosTab extends StatefulWidget {
   const MacrosTab({super.key});

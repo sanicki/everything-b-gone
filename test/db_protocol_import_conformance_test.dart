@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:irblaster_controller/ir_finder/ir_finder_models.dart';
-import 'package:irblaster_controller/utils/db_button_import.dart';
-import 'package:irblaster_controller/utils/ir.dart';
+import 'package:everythingbgone/ir_finder/ir_finder_models.dart';
+import 'package:everythingbgone/utils/db_button_import.dart';
+import 'package:everythingbgone/utils/ir.dart';
 
 void main() {
   test('A bundled database code for every protocol produces a valid signal', () {

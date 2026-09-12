@@ -1,15 +1,15 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-import 'package:irblaster_controller/utils/ir.dart';
-import 'package:irblaster_controller/utils/remote.dart';
-import 'package:irblaster_controller/widgets/quick_tile_chooser.dart';
+import 'package:everythingbgone/utils/ir.dart';
+import 'package:everythingbgone/utils/remote.dart';
+import 'package:everythingbgone/widgets/quick_tile_chooser.dart';
 
 class HomeButtonWidgetPrefs {
   HomeButtonWidgetPrefs._();
 
   static const MethodChannel _channel =
-      MethodChannel('org.nslabs/irtransmitter_home_widget');
+      MethodChannel('com.example.everythingbgone/irtransmitter_home_widget');
 
   static Future<bool> isPinSupported() async {
     final raw = await _channel.invokeMethod<bool>('isPinSupported');

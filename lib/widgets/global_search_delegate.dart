@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:irblaster_controller/l10n/icon_picker_names.dart';
-import 'package:irblaster_controller/l10n/l10n.dart';
-import 'package:irblaster_controller/models/timed_macro.dart';
-import 'package:irblaster_controller/state/macros_state.dart';
-import 'package:irblaster_controller/state/remotes_state.dart';
-import 'package:irblaster_controller/utils/button_label.dart';
-import 'package:irblaster_controller/utils/remote.dart';
-import 'package:irblaster_controller/widgets/macro_run_screen.dart';
-import 'package:irblaster_controller/widgets/remote_view.dart';
+import 'package:everythingbgone/l10n/icon_picker_names.dart';
+import 'package:everythingbgone/l10n/l10n.dart';
+import 'package:everythingbgone/models/timed_macro.dart';
+import 'package:everythingbgone/state/macros_state.dart';
+import 'package:everythingbgone/state/remotes_state.dart';
+import 'package:everythingbgone/utils/button_label.dart';
+import 'package:everythingbgone/utils/remote.dart';
+import 'package:everythingbgone/widgets/macro_run_screen.dart';
+import 'package:everythingbgone/widgets/remote_view.dart';
 
 class GlobalSearchDelegate extends SearchDelegate<void> {
   @override
