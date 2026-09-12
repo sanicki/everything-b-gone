@@ -438,6 +438,7 @@ class _EverythingBGoneScreenState extends State<EverythingBGoneScreen> {
               powerController: _powerController,
               muteController: _muteController,
               showSignalCounts: RemoteDisplayController.instance.showButtonMetadata,
+              hasTransmitter: _hasReadyTransmitter,
             ),
           ),
       ],
@@ -540,6 +541,7 @@ class _ActionArea extends StatelessWidget {
   final TransmitCycleController<FlipperIrSignal> powerController;
   final TransmitCycleController<FlipperIrSignal> muteController;
   final bool showSignalCounts;
+  final bool hasTransmitter;
 
   const _ActionArea({
     required this.powerSignals,
@@ -549,6 +551,7 @@ class _ActionArea extends StatelessWidget {
     required this.powerController,
     required this.muteController,
     required this.showSignalCounts,
+    required this.hasTransmitter,
   });
 
   @override
@@ -567,6 +570,7 @@ class _ActionArea extends StatelessWidget {
             onColor: cs.onPrimary,
             big: true,
             showSignalCount: showSignalCounts,
+            hasTransmitter: hasTransmitter,
           ),
         if (powerSignals.isNotEmpty && muteSignals.isNotEmpty) const SizedBox(height: 20),
         if (muteSignals.isNotEmpty)
@@ -580,6 +584,7 @@ class _ActionArea extends StatelessWidget {
             onColor: cs.onSecondaryContainer,
             big: false,
             showSignalCount: showSignalCounts,
+            hasTransmitter: hasTransmitter,
           ),
       ],
     );
@@ -596,6 +601,7 @@ class _CycleControl extends StatelessWidget {
   final Color onColor;
   final bool big;
   final bool showSignalCount;
+  final bool hasTransmitter;
 
   const _CycleControl({
     required this.label,
@@ -607,6 +613,7 @@ class _CycleControl extends StatelessWidget {
     required this.onColor,
     required this.big,
     required this.showSignalCount,
+    required this.hasTransmitter,
   });
 
   Widget _circle({
@@ -615,6 +622,10 @@ class _CycleControl extends StatelessWidget {
     required Color foreground,
     required Widget child,
   }) {
+    // Only force the custom colors while enabled — leaving them null when
+    // disabled lets FilledButton fall back to Material's standard greyed-out
+    // disabled treatment instead of always painting at full color.
+    final enabled = onPressed != null;
     return SizedBox(
       width: 160,
       height: 160,
@@ -622,8 +633,8 @@ class _CycleControl extends StatelessWidget {
         onPressed: onPressed,
         style: FilledButton.styleFrom(
           shape: const CircleBorder(),
-          backgroundColor: background,
-          foregroundColor: foreground,
+          backgroundColor: enabled ? background : null,
+          foregroundColor: enabled ? foreground : null,
         ),
         child: child,
       ),
@@ -672,7 +683,7 @@ class _CycleControl extends StatelessWidget {
       );
     }
 
-    final onPressed = otherRunning
+    final onPressed = (otherRunning || !hasTransmitter)
         ? null
         : () => controller.start(signals, delayMs: TransmitCyclePrefs.instance.delayMs);
 
