@@ -2,30 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.everythingbgone">
 
-    <!-- Declare which external ACTION_* intents your app will use -->
-    <queries>
-        <!-- User-import: pick an existing IR file -->
-        <intent>
-            <action android:name="android.intent.action.OPEN_DOCUMENT" />
-            <category android:name="android.intent.category.OPENABLE" />
-            <data android:mimeType="*/*" />
-        </intent>
-
-        <!-- User-export: create/save an IR file -->
-        <intent>
-            <action android:name="android.intent.action.CREATE_DOCUMENT" />
-            <category android:name="android.intent.category.OPENABLE" />
-            <data android:mimeType="*/*" />
-        </intent>
-
-        <!-- Some pickers/providers use GET_CONTENT -->
-        <intent>
-            <action android:name="android.intent.action.GET_CONTENT" />
-            <category android:name="android.intent.category.OPENABLE" />
-            <data android:mimeType="*/*" />
-        </intent>
-    </queries>
-
     <!-- Hardware capabilities (optional) -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <uses-feature android:name="android.hardware.consumerir" android:required="false" />
@@ -34,15 +10,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.TRANSMIT_IR" />
     <uses-permission android:name="android.permission.VIBRATE" />
-
-    <!-- Legacy storage permissions for Android 10 and below.
-         Android 11+ uses scoped storage / the system document picker. -->
-    <uses-permission
-        android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />
-    <uses-permission
-        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />
 
     <application
         android:label="Everything-B-Gone"

@@ -11,10 +11,7 @@ import 'package:everythingbgone/state/home_surface_prefs.dart';
 import 'package:everythingbgone/state/app_theme.dart';
 import 'package:everythingbgone/state/dynamic_color.dart';
 import 'package:everythingbgone/state/remote_display_prefs.dart';
-import 'package:everythingbgone/state/remotes_state.dart';
-import 'package:everythingbgone/state/startup_prefs.dart';
 import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
-import 'package:everythingbgone/utils/remote.dart';
 import 'package:everythingbgone/widgets/about_screen.dart';
 import 'package:everythingbgone/widgets/settings/widgets/donation_sheet.dart';
 import 'package:everythingbgone/widgets/settings/widgets/section_card.dart';
@@ -105,86 +102,6 @@ class SettingsScreen extends StatelessWidget {
     await Haptics.selectionClick();
   }
 
-  Future<bool> _confirmAction(
-    BuildContext context, {
-    required String title,
-    required String message,
-    required String confirmLabel,
-    IconData icon = Icons.warning_amber_rounded,
-    bool destructive = false,
-  }) async {
-    final theme = Theme.of(context);
-    return await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: Icon(
-          icon,
-          color:
-              destructive ? theme.colorScheme.error : theme.colorScheme.primary,
-          size: 32,
-        ),
-        title: Text(title),
-        content: Text(message, style: theme.textTheme.bodyMedium),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(context.l10n.cancel),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: destructive
-                ? FilledButton.styleFrom(
-                    backgroundColor: theme.colorScheme.errorContainer,
-                    foregroundColor: theme.colorScheme.onErrorContainer,
-                  )
-                : null,
-            child: Text(confirmLabel),
-          ),
-        ],
-      ),
-    ).then((v) => v ?? false);
-  }
-
-  Future<void> _restoreDemoRemote(BuildContext context) async {
-    final l10n = context.l10n;
-    final confirmed = await _confirmAction(
-      context,
-      title: l10n.settingsRestoreDemoTitle,
-      message: l10n.settingsRestoreDemoMessage,
-      confirmLabel: l10n.settingsRestoreDemoConfirm,
-      icon: Icons.restore_rounded,
-      destructive: true,
-    );
-    if (!confirmed) return;
-
-    remotes = writeDefaultRemotes(demoRemoteName: l10n.demoRemoteName);
-    await writeRemotelist(remotes);
-    notifyRemotesChanged();
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.settingsDemoRemotesRestored)));
-  }
-
-  Future<void> _deleteAllRemotes(BuildContext context) async {
-    final confirmed = await _confirmAction(
-      context,
-      title: context.l10n.settingsDeleteAllRemotesTitle,
-      message: context.l10n.settingsDeleteAllRemotesMessage,
-      confirmLabel: context.l10n.settingsDeleteAllConfirm,
-      icon: Icons.delete_forever,
-      destructive: true,
-    );
-    if (!confirmed) return;
-
-    remotes = <Remote>[];
-    await writeRemotelist(remotes);
-    notifyRemotesChanged();
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.settingsAllRemotesDeleted)));
-  }
 
   void _openDonationSheet(BuildContext context) {
     showModalBottomSheet<void>(
@@ -420,8 +337,6 @@ class SettingsScreen extends StatelessWidget {
           _buildIrTransmitterSection(context, cs),
           const SizedBox(height: 10),
           _buildFlipperDataSection(context, cs),
-          const SizedBox(height: 10),
-          _buildRemotesSection(context),
           const SizedBox(height: 10),
           _buildDeviceControlsSection(context),
           const SizedBox(height: 10),
@@ -888,7 +803,6 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildInteractionSection(BuildContext context) {
     final orientationCtrl = RemoteOrientationController.instance;
     final displayCtrl = RemoteDisplayController.instance;
-    final startupCtrl = StartupPrefsController.instance;
     final cs = Theme.of(context).colorScheme;
     unawaited(HapticsController.instance.refreshDiagnostics(notify: false));
 
@@ -900,19 +814,6 @@ class SettingsScreen extends StatelessWidget {
         leading: Icon(Icons.vibration_rounded, color: cs.primary),
         child: Column(
           children: [
-            AnimatedBuilder(
-              animation: startupCtrl,
-              builder: (context, _) {
-                return SwitchListTile.adaptive(
-                  secondary: const Icon(Icons.history_rounded),
-                  title: Text(context.l10n.autoOpenLastRemoteTitle),
-                  subtitle: Text(context.l10n.autoOpenLastRemoteSubtitle),
-                  value: startupCtrl.autoOpenLastRemote,
-                  onChanged: startupCtrl.setAutoOpenLastRemote,
-                );
-              },
-            ),
-            const Divider(height: 1),
             AnimatedBuilder(
               animation: HapticsController.instance,
               builder: (context, _) {
@@ -1112,38 +1013,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRemotesSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SectionCard(
-        title: 'Reset',
-        subtitle: 'Restore or clear local demo data',
-        leading: Icon(Icons.restore_rounded, color: cs.primary),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.restore_rounded),
-              title: Text(context.l10n.restoreDemoRemotes),
-              subtitle: Text(context.l10n.restoreDemoRemotesSubtitle),
-              onTap: () => _restoreDemoRemote(context),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading:
-                  Icon(Icons.delete_forever, color: theme.colorScheme.error),
-              title: Text(context.l10n.deleteAllRemotes,
-                  style: TextStyle(color: theme.colorScheme.error)),
-              subtitle: Text(context.l10n.deleteAllRemotesSubtitle),
-              onTap: () => _deleteAllRemotes(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildAboutSection(BuildContext context) {
     final theme = Theme.of(context);

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:everythingbgone/l10n/app_localizations.dart';
-import 'package:everythingbgone/state/startup_prefs.dart';
 
 // TODO: reintroduce real dynamic-shortcut actions once the Everything-B-Gone
 // home screen exists. Every action this used to dispatch to (last remote,
@@ -31,7 +30,6 @@ class AppShortcutController {
         if (call.method != 'openShortcut') return;
         final action = _readAction(call.arguments);
         if (action == null) return;
-        StartupPrefsController.instance.suppressAutoOpenForCurrentLaunch();
         _pendingAction = action;
         _scheduleDispatch();
       });
@@ -39,8 +37,7 @@ class AppShortcutController {
         final initial =
             await _channel.invokeMethod<String>('consumeInitialShortcutAction');
         if (initial != null && initial.trim().isNotEmpty) {
-          StartupPrefsController.instance.suppressAutoOpenForCurrentLaunch();
-          _pendingAction = initial.trim();
+            _pendingAction = initial.trim();
         }
       } catch (_) {}
     }

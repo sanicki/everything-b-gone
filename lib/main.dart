@@ -11,16 +11,12 @@ import 'package:everythingbgone/state/dynamic_color.dart';
 import 'package:everythingbgone/state/haptics.dart';
 import 'package:everythingbgone/state/orientation_pref.dart';
 import 'package:everythingbgone/state/remote_display_prefs.dart';
-import 'package:everythingbgone/state/startup_prefs.dart';
 import 'package:everythingbgone/state/transmitter_prefs.dart';
-import 'package:everythingbgone/state/remotes_state.dart';
 import 'package:everythingbgone/flipper_irdb/kill_switch_action.dart';
 import 'package:flutter/services.dart';
 import 'package:everythingbgone/l10n/app_localizations.dart';
 import 'package:everythingbgone/l10n/l10n.dart';
-import 'package:everythingbgone/utils/remote.dart';
 import 'package:everythingbgone/widgets/home_shell.dart';
-import 'package:media_store_plus/media_store_plus.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,7 +39,6 @@ Future<void> main() async {
       HapticsController.instance.load(),
       RemoteOrientationController.instance.load(),
       RemoteDisplayController.instance.load(),
-      StartupPrefsController.instance.load(),
       TransmitterPrefs.instance.load(),
       // lazy import to avoid circulars; we refer by string to keep tool happy
     ]);
@@ -80,7 +75,6 @@ void _initControlChannel() {
     }
     final killSwitchAction = _killSwitchActionFromString(action);
     if (killSwitchAction == null) return;
-    StartupPrefsController.instance.suppressAutoOpenForCurrentLaunch();
     try {
       await fireKillSwitchAction(killSwitchAction);
     } catch (e, st) {
@@ -169,39 +163,6 @@ class _BootstrapScreenState extends State<_BootstrapScreen> {
   late Future<void> _future = _bootstrap();
 
   Future<void> _bootstrap() async {
-    final supportedLocales = AppLocalizations.supportedLocales.toList();
-    final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
-    final bootstrapLocale = AppLocaleController.instance.resolveActiveLocale(
-      supportedLocales,
-      systemLocale,
-    );
-    AppLocalizations bootstrapL10n;
-    try {
-      bootstrapL10n = await AppLocalizations.delegate.load(bootstrapLocale);
-    } catch (_) {
-      bootstrapL10n = await AppLocalizations.delegate.load(
-        AppLocaleController.instance
-            .resolveActiveLocale(supportedLocales, const Locale('en')),
-      );
-    }
-    await MediaStore.ensureInitialized().timeout(
-      const Duration(seconds: 8),
-      onTimeout: () {
-        throw TimeoutException('MediaStore.ensureInitialized() timed out');
-      },
-    );
-    MediaStore.appFolder = 'IRBlaster';
-    remotes = await readRemotes().timeout(
-      const Duration(seconds: 8),
-      onTimeout: () {
-        throw TimeoutException('readRemotes() timed out');
-      },
-    );
-    if (remotes.isEmpty) {
-      remotes =
-          writeDefaultRemotes(demoRemoteName: bootstrapL10n.demoRemoteName);
-    }
-    notifyRemotesChanged();
     AppShortcutController.instance.markBootstrapReady();
   }
 
