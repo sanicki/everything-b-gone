@@ -41,7 +41,7 @@ class MainActivity : FlutterActivity() {
     private enum class UsbAvailabilityState { NO_DEVICE, PERMISSION_REQUIRED, PERMISSION_DENIED, PERMISSION_GRANTED, OPEN_FAILED, READY }
     private data class UsbAcquireResult(val transmitter: UsbIrTransmitter?, val state: UsbAvailabilityState)
 
-    private val TAG = "IRBlaster"
+    private val TAG = "EverythingBGone"
 
     private var currentTxType: TxType = TxType.INTERNAL
     private var autoSwitchEnabled: Boolean = false

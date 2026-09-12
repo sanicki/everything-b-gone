@@ -581,11 +581,57 @@ class _CycleControl extends StatelessWidget {
     required this.showSignalCount,
   });
 
+  Widget _circle({required VoidCallback? onPressed, required Widget child}) {
+    return SizedBox(
+      width: 160,
+      height: 160,
+      child: FilledButton(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          shape: const CircleBorder(),
+          backgroundColor: color,
+          foregroundColor: onColor,
+        ),
+        child: child,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final running = controller.running;
 
     if (running) {
+      final progressBar = SizedBox(
+        width: 220,
+        child: LinearProgressIndicator(
+          value: controller.total == 0 ? null : controller.attempted / controller.total,
+        ),
+      );
+
+      if (big) {
+        return Column(
+          children: [
+            _circle(
+              onPressed: controller.stop,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.stop_rounded, size: 40),
+                  const SizedBox(height: 4),
+                  Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  if (showSignalCount)
+                    Text('${controller.attempted}/${controller.total}',
+                        style: const TextStyle(fontSize: 11)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            progressBar,
+          ],
+        );
+      }
+
       final stopLabel = showSignalCount
           ? 'Stop — $label (${controller.attempted}/${controller.total})'
           : 'Stop — $label';
@@ -597,12 +643,7 @@ class _CycleControl extends StatelessWidget {
             label: Text(stopLabel),
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            width: 220,
-            child: LinearProgressIndicator(
-              value: controller.total == 0 ? null : controller.attempted / controller.total,
-            ),
-          ),
+          progressBar,
         ],
       );
     }
@@ -611,27 +652,18 @@ class _CycleControl extends StatelessWidget {
         otherRunning ? null : () => controller.start(signals, delayMs: 700);
 
     if (big) {
-      return SizedBox(
-        width: 160,
-        height: 160,
-        child: FilledButton(
-          onPressed: onPressed,
-          style: FilledButton.styleFrom(
-            shape: const CircleBorder(),
-            backgroundColor: color,
-            foregroundColor: onColor,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.power_settings_new_rounded, size: 40),
-              const SizedBox(height: 4),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              if (showSignalCount)
-                Text('${signals.length} signal${signals.length == 1 ? '' : 's'}',
-                    style: const TextStyle(fontSize: 11)),
-            ],
-          ),
+      return _circle(
+        onPressed: onPressed,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.power_settings_new_rounded, size: 40),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            if (showSignalCount)
+              Text('${signals.length} signal${signals.length == 1 ? '' : 's'}',
+                  style: const TextStyle(fontSize: 11)),
+          ],
         ),
       );
     }
