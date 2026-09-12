@@ -142,5 +142,84 @@ void main() {
       expect(matchingPowerSignals(withOneUnmatched), hasLength(1));
       expect(matchingMuteSignals(withOneUnmatched), hasLength(1));
     });
+
+    test('collapses files whose power signal transmits the identical command',
+        () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Sony',
+          fileName: 'model_a.ir',
+          path: 'TVs/Sony/model_a.ir',
+          signals: const [
+            FlipperIrSignal(
+              name: 'Power',
+              protocol: 'SIRC',
+              protocolParams: {'address': 1, 'command': 21},
+            ),
+          ],
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Sony',
+          fileName: 'model_b.ir',
+          path: 'TVs/Sony/model_b.ir',
+          signals: const [
+            FlipperIrSignal(
+              name: 'Power',
+              protocol: 'SIRC',
+              // Same command, keys given in a different order — should still
+              // dedupe since it's the identical transmission.
+              protocolParams: {'command': 21, 'address': 1},
+            ),
+          ],
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Sony',
+          fileName: 'model_c.ir',
+          path: 'TVs/Sony/model_c.ir',
+          signals: const [
+            FlipperIrSignal(
+              name: 'Power',
+              protocol: 'SIRC',
+              protocolParams: {'address': 1, 'command': 22},
+            ),
+          ],
+        ),
+      ];
+
+      final result = matchingPowerSignals(files);
+      expect(result, hasLength(2),
+          reason: 'model_a and model_b transmit the same command');
+    });
+
+    test('collapses files whose raw power signal is byte-for-byte identical',
+        () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Generic',
+          fileName: 'model_a.ir',
+          path: 'TVs/Generic/model_a.ir',
+          signals: const [
+            FlipperIrSignal(
+                name: 'Power', rawData: '9000 4500 560 560', frequencyHz: 38000),
+          ],
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Generic',
+          fileName: 'model_b.ir',
+          path: 'TVs/Generic/model_b.ir',
+          signals: const [
+            FlipperIrSignal(
+                name: 'Power', rawData: '9000 4500 560 560', frequencyHz: 38000),
+          ],
+        ),
+      ];
+
+      expect(matchingPowerSignals(files), hasLength(1));
+    });
   });
 }
