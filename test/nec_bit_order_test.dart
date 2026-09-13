@@ -38,7 +38,7 @@ void main() {
     final expected = <int>[0x00, 0xFF, 0x01, 0xFE];
     expect(_decodeAsStandardNec(previewIRButton(button).pattern), expected);
 
-    const channel = MethodChannel('com.example.everythingbgone/irtransmitter');
+    const channel = MethodChannel('io.github.sanicki.everythingbgone/irtransmitter');
     MethodCall? transmitted;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {

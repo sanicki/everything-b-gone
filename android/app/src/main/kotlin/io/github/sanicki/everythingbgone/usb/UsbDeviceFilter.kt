@@ -1,4 +1,4 @@
-package com.example.everythingbgone
+package io.github.sanicki.everythingbgone
 
 import android.hardware.usb.UsbDevice
 

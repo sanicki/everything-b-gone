@@ -1,6 +1,6 @@
 <!-- android/app/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.everythingbgone">
+    package="io.github.sanicki.everythingbgone">
 
     <!-- Hardware capabilities (optional) -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
@@ -59,7 +59,7 @@
             android:name=".UsbPermissionReceiver"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.example.everythingbgone.USB_PERMISSION" />
+                <action android:name="io.github.sanicki.everythingbgone.USB_PERMISSION" />
             </intent-filter>
         </receiver>
 
@@ -68,7 +68,7 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.example.everythingbgone.widget.SEND_BUTTON" />
+                <action android:name="io.github.sanicki.everythingbgone.widget.SEND_BUTTON" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

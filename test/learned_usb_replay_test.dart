@@ -6,7 +6,7 @@ import 'package:everythingbgone/utils/remote.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('com.example.everythingbgone/irtransmitter');
+  const channel = MethodChannel('io.github.sanicki.everythingbgone/irtransmitter');
   final calls = <MethodCall>[];
 
   setUp(() {

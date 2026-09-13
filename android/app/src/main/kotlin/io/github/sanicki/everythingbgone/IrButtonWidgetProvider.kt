@@ -1,4 +1,4 @@
-package com.example.everythingbgone
+package io.github.sanicki.everythingbgone
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -35,7 +35,7 @@ class IrButtonWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        const val ACTION_SEND = "com.example.everythingbgone.widget.SEND_BUTTON"
+        const val ACTION_SEND = "io.github.sanicki.everythingbgone.widget.SEND_BUTTON"
 
         fun updateWidget(context: Context, manager: AppWidgetManager, appWidgetId: Int) {
             if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return

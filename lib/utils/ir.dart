@@ -4,7 +4,7 @@ import 'package:everythingbgone/ir/ir_protocol_registry.dart';
 import 'package:everythingbgone/utils/ir_transmitter_platform.dart';
 import 'remote.dart';
 
-const platform = MethodChannel('com.example.everythingbgone/irtransmitter');
+const platform = MethodChannel('io.github.sanicki.everythingbgone/irtransmitter');
 
 const int kDefaultNecFrequencyHz = 38000;
 const int kMinIrFrequencyHz = 15000;
