@@ -1,4 +1,4 @@
-package com.example.everythingbgone.audio
+package io.github.sanicki.everythingbgone.audio
 
 import android.media.AudioAttributes
 import android.media.AudioFormat

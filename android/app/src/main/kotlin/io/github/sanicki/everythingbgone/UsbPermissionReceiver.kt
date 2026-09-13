@@ -1,4 +1,4 @@
-package com.example.everythingbgone
+package io.github.sanicki.everythingbgone
 
 import android.content.BroadcastReceiver
 import android.content.Context

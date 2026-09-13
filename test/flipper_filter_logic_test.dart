@@ -241,22 +241,26 @@ void main() {
       expect(groups.single.rows.single.optionLabel, isNull);
     });
 
-    test('multiple files for the same brand are numbered by file name order',
-        () {
+    test('multiple distinct-signal files for the same brand are numbered by '
+        'file name order', () {
       final files = [
         FlipperIrFile(
           deviceType: 'TVs',
           brand: 'Samsung',
           fileName: 'model_b.ir',
           path: 'TVs/Samsung/model_b.ir',
-          signals: const [FlipperIrSignal(name: 'Power')],
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '200 200', frequencyHz: 38000),
+          ],
         ),
         FlipperIrFile(
           deviceType: 'TVs',
           brand: 'Samsung',
           fileName: 'model_a.ir',
           path: 'TVs/Samsung/model_a.ir',
-          signals: const [FlipperIrSignal(name: 'Power')],
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '100 100', frequencyHz: 38000),
+          ],
         ),
       ];
 
@@ -285,8 +289,8 @@ void main() {
       expect(rows.single.brand, 'Samsung');
     });
 
-    test('option numbering stays stable even when a same-brand file is skipped',
-        () {
+    test('option numbering is recomputed from the survivors after skipping '
+        'a no-signal file, so a lone survivor gets no label', () {
       final files = [
         FlipperIrFile(
           deviceType: 'TVs',
@@ -307,9 +311,104 @@ void main() {
       final rows = buildSignalListGroups(files).single.rows;
       expect(rows, hasLength(1));
       expect(rows.single.file.fileName, 'model_b.ir');
-      expect(rows.single.optionLabel, 'Option 2',
-          reason: 'numbering reflects position among all same-brand files, '
-              'not just the ones that survive filtering');
+      expect(rows.single.optionLabel, isNull,
+          reason: 'only one row survives for this brand, so no "Option N" '
+              'suffix is needed');
+    });
+
+    test('rows sharing a Brand with the identical Power and Mute signal are '
+        'de-duped, keeping the first in file-name order', () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_b.ir',
+          path: 'TVs/Samsung/model_b.ir',
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '100 100', frequencyHz: 38000),
+            FlipperIrSignal(name: 'Mute', rawData: '200 200', frequencyHz: 38000),
+          ],
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_a.ir',
+          path: 'TVs/Samsung/model_a.ir',
+          // Identical Power and Mute transmissions as model_b, just a
+          // different file name — this is the duplicate to collapse.
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '100 100', frequencyHz: 38000),
+            FlipperIrSignal(name: 'Mute', rawData: '200 200', frequencyHz: 38000),
+          ],
+        ),
+      ];
+
+      final rows = buildSignalListGroups(files).single.rows;
+      expect(rows, hasLength(1));
+      expect(rows.single.file.fileName, 'model_a.ir',
+          reason: 'first survivor in file-name order is kept');
+      expect(rows.single.optionLabel, isNull);
+    });
+
+    test('same Brand + same Power but a different Mute is NOT de-duped', () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_a.ir',
+          path: 'TVs/Samsung/model_a.ir',
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '100 100', frequencyHz: 38000),
+            FlipperIrSignal(name: 'Mute', rawData: '200 200', frequencyHz: 38000),
+          ],
+        ),
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'model_b.ir',
+          path: 'TVs/Samsung/model_b.ir',
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '100 100', frequencyHz: 38000),
+            FlipperIrSignal(name: 'Mute', rawData: '999 999', frequencyHz: 38000),
+          ],
+        ),
+      ];
+
+      final rows = buildSignalListGroups(files).single.rows;
+      expect(rows, hasLength(2));
+      expect(rows[0].optionLabel, 'Option 1');
+      expect(rows[1].optionLabel, 'Option 2');
+    });
+
+    test('de-duping is scoped per Device Type: identical Brand+Power+Mute in '
+        'a different Device Type is kept', () {
+      final files = [
+        FlipperIrFile(
+          deviceType: 'TVs',
+          brand: 'Samsung',
+          fileName: 'a.ir',
+          path: 'TVs/Samsung/a.ir',
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '100 100', frequencyHz: 38000),
+            FlipperIrSignal(name: 'Mute', rawData: '200 200', frequencyHz: 38000),
+          ],
+        ),
+        FlipperIrFile(
+          deviceType: 'Soundbars',
+          brand: 'Samsung',
+          fileName: 'a.ir',
+          path: 'Soundbars/Samsung/a.ir',
+          signals: const [
+            FlipperIrSignal(name: 'Power', rawData: '100 100', frequencyHz: 38000),
+            FlipperIrSignal(name: 'Mute', rawData: '200 200', frequencyHz: 38000),
+          ],
+        ),
+      ];
+
+      final groups = buildSignalListGroups(files);
+      expect(groups, hasLength(2));
+      expect(groups[0].rows, hasLength(1));
+      expect(groups[1].rows, hasLength(1));
     });
 
     test('a device type with zero qualifying rows is omitted entirely', () {

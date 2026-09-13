@@ -60,7 +60,7 @@ final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 /// ready; there is nothing left to look up since there are no more saved
 /// remotes, so this just fires the kill-switch cycle directly.
 const MethodChannel _controlChannel =
-    MethodChannel('com.example.everythingbgone/irtransmitter_controls');
+    MethodChannel('io.github.sanicki.everythingbgone/irtransmitter_controls');
 
 void _initControlChannel() {
   _controlChannel.setMethodCallHandler((call) async {

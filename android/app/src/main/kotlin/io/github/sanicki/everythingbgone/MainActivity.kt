@@ -1,4 +1,4 @@
-package com.example.everythingbgone
+package io.github.sanicki.everythingbgone
 
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -33,8 +33,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import com.example.everythingbgone.audio.AudioCapturedIrPlayer
-import com.example.everythingbgone.audio.AudioIrTransmitter
+import io.github.sanicki.everythingbgone.audio.AudioCapturedIrPlayer
+import io.github.sanicki.everythingbgone.audio.AudioIrTransmitter
 
 class MainActivity : FlutterActivity() {
     private enum class TxType { INTERNAL, USB, AUDIO_1_LED, AUDIO_2_LED }
@@ -124,7 +124,7 @@ class MainActivity : FlutterActivity() {
 
     private fun setUsbAttachAliasEnabled(enabled: Boolean) {
         val pm = applicationContext.packageManager
-        val cn = ComponentName(applicationContext, "com.example.everythingbgone.UsbAttachAlias")
+        val cn = ComponentName(applicationContext, "io.github.sanicki.everythingbgone.UsbAttachAlias")
         val state = if (enabled) {
             PackageManager.COMPONENT_ENABLED_STATE_ENABLED
         } else {
@@ -393,11 +393,11 @@ class MainActivity : FlutterActivity() {
     }
 
     companion object {
-        private const val CHANNEL = "com.example.everythingbgone/irtransmitter"
-        private const val EVENT_CHANNEL = "com.example.everythingbgone/irtransmitter_events"
-        private const val CONTROL_CHANNEL = "com.example.everythingbgone/irtransmitter_controls"
-        private const val SHORTCUTS_CHANNEL = "com.example.everythingbgone/app_shortcuts"
-        private const val EXTRA_SHORTCUT_ACTION = "com.example.everythingbgone.SHORTCUT_ACTION"
+        private const val CHANNEL = "io.github.sanicki.everythingbgone/irtransmitter"
+        private const val EVENT_CHANNEL = "io.github.sanicki.everythingbgone/irtransmitter_events"
+        private const val CONTROL_CHANNEL = "io.github.sanicki.everythingbgone/irtransmitter_controls"
+        private const val SHORTCUTS_CHANNEL = "io.github.sanicki.everythingbgone/app_shortcuts"
+        private const val EXTRA_SHORTCUT_ACTION = "io.github.sanicki.everythingbgone.SHORTCUT_ACTION"
         private const val DEFAULT_HEX_FREQUENCY = 38000
         private const val MIN_IR_HZ = 15000
         private const val MAX_IR_HZ = 60000

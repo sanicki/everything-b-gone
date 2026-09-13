@@ -1,4 +1,4 @@
-package com.example.everythingbgone.audio
+package io.github.sanicki.everythingbgone.audio
 
 import android.content.Context
 import android.hardware.usb.UsbManager

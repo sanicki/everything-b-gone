@@ -1,4 +1,4 @@
-package com.example.everythingbgone
+package io.github.sanicki.everythingbgone
 
 import android.app.PendingIntent
 import android.content.Context
@@ -19,7 +19,7 @@ class UsbDiscoveryManager(
   private data class EndpointPair(val outEp: UsbEndpoint, val inEp: UsbEndpoint, val endpointNumber: Int)
 
   companion object {
-    const val ACTION_USB_PERMISSION = "com.example.everythingbgone.USB_PERMISSION"
+    const val ACTION_USB_PERMISSION = "io.github.sanicki.everythingbgone.USB_PERMISSION"
   }
 
   fun scanSupported(): List<UsbDevice> = usb.deviceList.values.filter { UsbDeviceFilter.isSupported(it) }

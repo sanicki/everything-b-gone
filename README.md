@@ -4,15 +4,10 @@ A single-purpose IR "kill switch" remote for Android. Pick a device type
 and brand, hit **Power** or **Mute**, and it blasts every matching signal
 from the [Flipper-IRDB](https://github.com/Lucaslhm/Flipper-IRDB)
 community database through your phone's built-in IR emitter, a USB IR
-dongle, or an audio-to-IR adapter — until the TV turns off (or shuts up).
+dongle, or an audio-to-IR adapter — until the device turns off (or shuts up).
 
 No custom remote building, no learning mode, no bruteforce tooling —
 just Power and Mute.
-
-> **Before shipping:** the Android package ID is currently the placeholder
-> `com.example.everythingbgone` (see `android/app/build.gradle`). Replace
-> it with a real reverse-domain ID you control before distributing this
-> app.
 
 ## How it works
 

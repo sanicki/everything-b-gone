@@ -212,8 +212,8 @@ class AudioLearningDiagnostics {
 class IrTransmitterPlatform {
   IrTransmitterPlatform._();
 
-  static const MethodChannel _ch = MethodChannel('com.example.everythingbgone/irtransmitter');
-  static const EventChannel _ev = EventChannel('com.example.everythingbgone/irtransmitter_events');
+  static const MethodChannel _ch = MethodChannel('io.github.sanicki.everythingbgone/irtransmitter');
+  static const EventChannel _ev = EventChannel('io.github.sanicki.everythingbgone/irtransmitter_events');
 
   static Stream<IrTransmitterCapabilities>? _capsEvents;
 

@@ -14,7 +14,7 @@ class AppShortcutController {
 
   static final AppShortcutController instance = AppShortcutController._();
   static const MethodChannel _channel =
-      MethodChannel('com.example.everythingbgone/app_shortcuts');
+      MethodChannel('io.github.sanicki.everythingbgone/app_shortcuts');
 
   GlobalKey<NavigatorState>? _navigatorKey;
   String? _pendingAction;
